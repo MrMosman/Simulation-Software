@@ -4,7 +4,7 @@ import pandas as pd
 import mesa
 import geopandas as gpd
 from shapely.geometry import Point, shape
-
+from map import MapControl
 
 
 
@@ -12,14 +12,17 @@ from shapely.geometry import Point, shape
 class UUVAgent(mesa.Agent):
     """UUV agent testing class"""
 
-    def __init__(self, model, spawn, target, canvas, *args, **kwargs):
+    def __init__(self, model, spawn, map, target, canvas, *args, **kwargs):
         super().__init__(model, *args, **kwargs)
         self.position = spawn #(x,y)
         self.target = target
+        self.map = map
         self.canvas = canvas
+        self.depth_min = 5
+        self.current_depth = self.map.depth_loc(x=self.position[0], y=self.position[1])
+        print(self.current_depth)
         self.oval = self.canvas.create_oval(self.position[0],self.position[1], self.position[0]+10, self.position[1]+10, fill='orange', tags='agent')
         self.canvas.lift(self.oval)
-        self.getTargetDir()
     
     def getTargetDir(self):
         new_x = self.target[0] - self.position[0]
@@ -27,6 +30,12 @@ class UUVAgent(mesa.Agent):
         new_vector = np.array([new_x, new_y])
         magnitude = np.linalg.norm(new_vector)
         unit_vector =0
+
+        #get the next depth
+        current_depth = self.map.depth_loc(x=self.position[0], y=self.position[1])
+        
+
+
         if(magnitude == 0):
             unit_vector = 0
         else:

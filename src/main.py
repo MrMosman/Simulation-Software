@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import filedialog as fd
 import numpy as np
 import pandas as pd
 import mesa
@@ -47,7 +48,7 @@ def on_start_click():
     start_btn.config(state="disabled")
     global model_test
     global spawn_point
-    model_test = UUVModel(n=tracker, canvas=canvas, spawns=spawn_point, targets=target_point)
+    model_test = UUVModel(n=tracker, canvas=canvas, spawns=spawn_point, targets=target_point, map=current_map)
     root.after(100, animate)
 
 #buttons start and stop
@@ -71,14 +72,14 @@ def handle_click(event):
 
     if selected_option.get()=="uuv":
         if tracker != 5:
-            start = canvas.create_oval(event.x, event.y, event.x + 10, event.y +10, fill="green")
+            start = canvas.create_oval(event.x-5, event.y-5, event.x + 5, event.y +5, fill="green")
             canvas.lift(start)
             tracker += 1
             tmp_spw = np.array([event.x, event.y])
             spawn_point.append(tmp_spw)
     elif selected_option.get()=="target":
         if target_n != 1:
-            target = start = canvas.create_oval(event.x, event.y, event.x + 10, event.y +10, fill="red")
+            target = start = canvas.create_oval(event.x-5, event.y-5, event.x+5, event.y+5, fill="red")
             canvas.lift(target)
             target_n = 1
             target_point = np.array([event.x, event.y])
@@ -96,14 +97,29 @@ target_radio = tk.Radiobutton(sim_menu, text="target point", variable=selected_o
 uuv_start_radio.pack()
 target_radio.pack()
 
+file_path = None
+def select_file():
+    global file_path
+    file_path = fd.askopenfilename(title="Selct a shapfile",
+                               initialdir="/", 
+                               filetypes=[("Shape files", "*.shp")]
+                                )
+    if file_path:
+        print(f"Selcted file: {file_path}")
+        create_map(file_path)
+    else:
+        print("no file selected")
 
-
-
+file_button = tk.Button(sim_menu, text="open file", command=select_file)
+file_button.pack(side="top")
 # setup the map to be drawn
-shape_path = "C:/Users/gtcdu/Downloads/extractedData_harbour_arcmap (1)/zipfolder/Harbour_Depth_Area.shp"
-shallow_color = (170, 201, 250)
-deep_color = (0, 0, 26)
-current_map = map.MapControl(shape_path=shape_path, canvas=canvas, shallow_color=shallow_color, deep_color=deep_color)
+# shape_path = "C:/Users/gtcdu/Downloads/extractedData_harbour_arcmap (1)/zipfolder/Harbour_Depth_Area.shp"
+current_map = None
+def create_map(shape_path):
+    shallow_color = (170, 201, 250)
+    deep_color = (0, 0, 26)
+    global current_map
+    current_map = map.MapControl(shape_path=shape_path, canvas=canvas, shallow_color=shallow_color, deep_color=deep_color)
 
 
 

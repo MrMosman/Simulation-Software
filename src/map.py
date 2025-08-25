@@ -59,10 +59,12 @@ class MapControl():
                 # Highlight
                 self.canvas.itemconfigure(clicked_item_id, width=0, fill="red")
                 self.selected_polygon_id = clicked_item_id
+                tmp = np.array([self.polygon_ids[clicked_item_id]['depth1'], self.polygon_ids[clicked_item_id]['depth2']])
+                return tmp
             
                 # Print information
-                print(f"Clicked on polygon with ID: {clicked_item_id}")
-                print(f"Depth: {self.polygon_ids[clicked_item_id]['depth1']}, {self.polygon_ids[clicked_item_id]['depth2']}")
+                # print(f"Clicked on polygon with ID: {clicked_item_id}")
+                # print(f"Depth: {self.polygon_ids[clicked_item_id]['depth1']}, {self.polygon_ids[clicked_item_id]['depth2']}")
 
 
     def set_depth_color(self, current_depth, min_d, max_d):
