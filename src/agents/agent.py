@@ -21,7 +21,7 @@ class UUVAgent(mesa.Agent):
         self.depth_min = 5
         self.current_depth = self.map.depth_loc(x=self.position[0], y=self.position[1])
         print(self.current_depth)
-        self.oval = self.canvas.create_oval(self.position[0],self.position[1], self.position[0]+10, self.position[1]+10, fill='orange', tags='agent')
+        self.oval = self.canvas.create_oval(self.position[0],self.position[1], self.position[0]+10, self.position[1]+10, fill='blue', tags='agent')
         self.canvas.lift(self.oval)
     
     def getTargetDir(self):
@@ -52,3 +52,5 @@ class UUVAgent(mesa.Agent):
             new_y = np.round(new_direction[1]).astype(int)
             self.position = np.array([self.position[0] + new_x, self.position[1]+new_y])
             self.canvas.move(self.oval, new_x, new_y)     
+            self.canvas.itemconfig(self.oval, fill="red")  # Change color to red while moving
+  

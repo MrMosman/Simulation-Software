@@ -135,3 +135,14 @@ class MapControl():
                 id=self.canvas.create_polygon(scaled_coords, fill=fill_color, width=0, tags="map")
                 self.polygon_ids[id]={"depth1": depth1, "depth2": depth2, "color": fill_color}
         
+    def canvas_to_latlon(self, x_canvas, y_canvas):
+        minx, miny, maxx, maxy = self.shp.total_bounds
+        geo_width = maxx - minx
+        geo_height = maxy - miny
+        buffer = 20
+        x_scale = (self.canvas_width - buffer) / geo_width
+        y_scale = (self.canvas_height - buffer) / geo_height
+        scale = min(x_scale, y_scale)
+        x_geo = x_canvas / scale + minx
+        y_geo = maxy - (y_canvas / scale)
+        return x_geo, y_geo
