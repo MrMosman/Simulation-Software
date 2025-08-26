@@ -4,6 +4,7 @@
 * Can spawn multiple agents with their targets
 * added some UI for easier spawning
 * update agent.py and model.py with better tracking and spawing
+* included file selct for shapefile
 
 ### 8/22/25
 * Set up the project to be more user friendly and include a README

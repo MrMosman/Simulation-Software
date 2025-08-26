@@ -60,29 +60,48 @@ start_btn.pack(side="top")
 
 # ----radio options----
 
+def check_inside_map(event):
+    """Get a list of items to determine if within boundries"""
+    # get list of items
+    overlapping_itmes = canvas.find_overlapping(event.x, event.y, event.x, event.y)
+
+    is_inside_tag = False
+    for item_id in overlapping_itmes:
+        tags = canvas.gettags(item_id)
+        if "map" in tags:
+            is_inside_tag = True
+            break
+    return is_inside_tag
+
+
+
 # radion fuctions
 tracker = 0
 target_n = 0
 def handle_click(event):
+    """handles the spawning of uuv and target points"""
     global spawn_point
     global tracker
     global target_n
     global target_point
     global selected_option
 
-    if selected_option.get()=="uuv":
-        if tracker != 5:
-            start = canvas.create_oval(event.x-5, event.y-5, event.x + 5, event.y +5, fill="green")
-            canvas.lift(start)
-            tracker += 1
-            tmp_spw = np.array([event.x, event.y])
-            spawn_point.append(tmp_spw)
-    elif selected_option.get()=="target":
-        if target_n != 1:
-            target = start = canvas.create_oval(event.x-5, event.y-5, event.x+5, event.y+5, fill="red")
-            canvas.lift(target)
-            target_n = 1
-            target_point = np.array([event.x, event.y])
+    is_inside_tag = check_inside_map(event=event)
+    print(is_inside_tag)
+    if is_inside_tag == True:
+        if selected_option.get()=="uuv":
+            if tracker != 5:
+                start = canvas.create_oval(event.x-5, event.y-5, event.x + 5, event.y +5, fill="green")
+                canvas.lift(start)
+                tracker += 1
+                tmp_spw = np.array([event.x, event.y])
+                spawn_point.append(tmp_spw)
+        elif selected_option.get()=="target":
+            if target_n != 1:
+                target = start = canvas.create_oval(event.x-5, event.y-5, event.x+5, event.y+5, fill="red")
+                canvas.lift(target)
+                target_n = 1
+                target_point = np.array([event.x, event.y])
 
 
 canvas.bind("<Button-1>", handle_click)
@@ -99,6 +118,7 @@ target_radio.pack()
 
 file_path = None
 def select_file():
+    """selects file-only allow shape files"""
     global file_path
     file_path = fd.askopenfilename(title="Selct a shapfile",
                                initialdir="/", 
@@ -116,6 +136,7 @@ file_button.pack(side="top")
 # shape_path = "C:/Users/gtcdu/Downloads/extractedData_harbour_arcmap (1)/zipfolder/Harbour_Depth_Area.shp"
 current_map = None
 def create_map(shape_path):
+    """creates the current map"""
     shallow_color = (170, 201, 250)
     deep_color = (0, 0, 26)
     global current_map
