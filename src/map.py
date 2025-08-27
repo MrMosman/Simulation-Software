@@ -2,8 +2,11 @@ import tkinter as tk
 import numpy as np
 import pandas as pd
 import geopandas as gpd
-from shapely.geometry import Point, shape
+from shapely.geometry import Point, shape, MultiPoint, Polygon
 import os
+from shapely.ops import triangulate, unary_union
+
+
 
 
 class MapControl():
@@ -33,8 +36,7 @@ class MapControl():
             self.deep_color = deep_color
 
         self.map_init(shape_path)
-        
-    
+        self.canvas.tag_raise('cell')
 
     def depth_loc(self, x, y):
         """
@@ -66,7 +68,6 @@ class MapControl():
                 # print(f"Clicked on polygon with ID: {clicked_item_id}")
                 # print(f"Depth: {self.polygon_ids[clicked_item_id]['depth1']}, {self.polygon_ids[clicked_item_id]['depth2']}")
 
-
     def set_depth_color(self, current_depth, min_d, max_d):
         """
         Calculates a color in a gradient from light-blue to dark blue.
@@ -85,6 +86,31 @@ class MapControl():
         # Convert the RGB to hex
         return f'#{r:02x}{g:02x}{b:02x}'
     
+    def draw_grids(self):
+        """For drawing and viewing the pathfinding grid"""
+        all_items = self.canvas.find_withtag("map")
+        merged_shape = []
+        for item_id in all_items:
+            coords = self.canvas.coords(item_id)
+            # Convert flat list of coords to list of (x, y) tuples
+            points = [(coords[i], coords[i+1]) for i in range(0, len(coords), 2)]
+            merged_shape.append(Polygon(points))
+
+        merged_shape = unary_union(merged_shape)
+        if merged_shape.geom_type == 'Polygon':
+            # Extract exterior coordinates for Tkinter polygon
+            new_coords = []
+            for x, y in merged_shape.exterior.coords:
+                new_coords.extend([x, y])
+            self.canvas.create_polygon(*new_coords, fill="blue", outline="black")
+        elif merged_shape.geom_type == 'MultiPolygon':
+            # Handle multiple resulting polygons if union creates disconnected shapes
+            for poly in merged_shape.geoms:
+                new_coords = []
+                for x, y in poly.exterior.coords:
+                    new_coords.extend([x, y])
+                self.canvas.create_polygon(*new_coords, fill="blue", outline="black")
+
     def map_init(self, shp_path):
         """
         Setups the map and draws it to the canvas
@@ -134,4 +160,65 @@ class MapControl():
                 # Draw the scaled polygon on the canvas and store in dictinary
                 id=self.canvas.create_polygon(scaled_coords, fill=fill_color, width=0, tags="map")
                 self.polygon_ids[id]={"depth1": depth1, "depth2": depth2, "color": fill_color}
-        
+
+
+    # def map_init(self, shp_path):
+    #     """
+    #     Setups the map and draws it to the canvas, with merging of polygons
+    #     of the same depth.
+    #     """
+    #     if shp_path is None:
+    #         print("No map selected")
+    #         return
+
+    #     # Load the shapefile
+    #     self.shp = gpd.read_file(shp_path)
+
+    #     # Set min and max depths for color gradient
+    #     self.min_depth = self.shp['DRVAL2'].min()
+    #     self.max_depth = self.shp['DRVAL2'].max()
+    #     minx, miny, maxx, maxy = self.shp.total_bounds
+
+    #     # Calculate scaling for the canvas
+    #     buffer = 20
+    #     geo_width = maxx - minx
+    #     geo_height = maxy - miny
+    #     scale = min((self.canvas_width - buffer) / geo_width, (self.canvas_height - buffer) / geo_height)
+
+    #     # Group the GeoDataFrame by depth and dissolve the polygons
+    #     dissolved_shp = self.shp.dissolve(by='DRVAL2', aggfunc='first').reset_index()
+
+    #     # Iterate through the dissolved GeoDataFrame and draw
+    #     for index, row in dissolved_shp.iterrows():
+    #         geometry = row['geometry']
+    #         depth1 = row["DRVAL1"]
+    #         depth2 = row["DRVAL2"]
+
+    #         # Handle both Polygon and MultiPolygon geometries from the dissolve
+    #         if geometry.geom_type == 'Polygon':
+    #             geometries_to_draw = [geometry]
+    #         elif geometry.geom_type == 'MultiPolygon':
+    #             geometries_to_draw = geometry.geoms
+    #         else:
+    #             continue
+
+    #         for single_geometry in geometries_to_draw:
+    #             # Check if geometry is a valid shape to draw
+    #             if not single_geometry.is_empty:
+    #                 # Get the exterior coordinates for drawing
+    #                 exterior_coords = list(single_geometry.exterior.coords)
+
+    #                 # Apply scaling and convert to a flat list
+    #                 scaled_coords = []
+    #                 for x_geo, y_geo in exterior_coords:
+    #                     new_x = (x_geo - minx) * scale
+    #                     new_y = (maxy - y_geo) * scale
+    #                     scaled_coords.extend([new_x, new_y])
+
+    #                 # Get color and draw the polygon
+    #                 fill_color = self.set_depth_color(depth2, self.min_depth, self.max_depth)
+    #                 id = self.canvas.create_polygon(scaled_coords, fill=fill_color, width=0, tags="map")
+
+    #                 # Store the polygon data
+    #                 self.polygon_ids[id] = {"depth1": depth1, "depth2": depth2, "color": fill_color}
+

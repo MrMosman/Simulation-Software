@@ -1,5 +1,13 @@
 # University of Massachusetts Dartmouth UUV SIM
 
+### 8/27/25
+* Added both the cell.py and grid.py for the A* algor
+* reverted to older map_init as was mergeing islands
+* succsefly place grid cell locations only on the map
+
+### 8/26/25
+* updated the map_init fucntion to merge and decrease polygons(too manny)
+
 ### 8/25/25
 * Can spawn multiple agents with their targets
 * added some UI for easier spawning

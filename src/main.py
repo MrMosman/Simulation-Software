@@ -7,9 +7,11 @@ import geopandas as gpd
 from shapely.geometry import Point, shape
 import os
 
+
 # project imports
 from agents.model import UUVModel
 import map
+from grid import Grid
 
 # For navigating the project
 CURRENT_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -35,8 +37,10 @@ canvas_frame.pack(side='top',  padx=5, pady=5)
 
 canvas_width = 700
 canvas_height = 700
-canvas = tk.Canvas(background="#011500", master=canvas_frame, width=canvas_width, height=canvas_height)
+canvas = tk.Canvas(background="#0A7005", master=canvas_frame, width=canvas_width, height=canvas_height)
 canvas.pack()
+
+
 
 
 # ----buttton control----
@@ -103,8 +107,11 @@ def handle_click(event):
                 target_n = 1
                 target_point = np.array([event.x, event.y])
 
+def show_depth(event):
+    current_map.depth_loc(event.x, event.y)
 
 canvas.bind("<Button-1>", handle_click)
+canvas.bind("<Button-3>", show_depth)
 
 #radio buttons select
 selected_option = tk.StringVar()
@@ -120,15 +127,17 @@ file_path = None
 def select_file():
     """selects file-only allow shape files"""
     global file_path
-    file_path = fd.askopenfilename(title="Selct a shapfile",
-                               initialdir="/", 
-                               filetypes=[("Shape files", "*.shp")]
-                                )
-    if file_path:
-        print(f"Selcted file: {file_path}")
-        create_map(file_path)
-    else:
-        print("no file selected")
+    file_path = "C:/Users/gtcdu/Downloads/extractedData_harbour_arcmap (1)/zipfolder/Harbour_Depth_Area.shp"
+    create_map(file_path)
+    # file_path = fd.askopenfilename(title="Selct a shapfile",
+    #                            initialdir="/", 
+    #                            filetypes=[("Shape files", "*.shp")]
+    #                             )
+    # if file_path:
+    #     print(f"Selcted file: {file_path}")
+    #     create_map(file_path)
+    # else:
+    #     print("no file selected")
 
 file_button = tk.Button(sim_menu, text="open file", command=select_file)
 file_button.pack(side="top")
@@ -141,6 +150,7 @@ def create_map(shape_path):
     deep_color = (0, 0, 26)
     global current_map
     current_map = map.MapControl(shape_path=shape_path, canvas=canvas, shallow_color=shallow_color, deep_color=deep_color)
+    create_grid()
 
 
 
@@ -156,6 +166,9 @@ def animate():
 
 
 
+# ----grid testing----
+def create_grid():
+    test_grid = Grid(width=canvas_width, height=canvas_height, cells_n=50, canvas=canvas)
 
 root.mainloop()
 
