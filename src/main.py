@@ -6,6 +6,8 @@ import mesa
 import geopandas as gpd
 from shapely.geometry import Point, shape
 import os
+from PIL import Image
+from PIL import ImageTk 
 
 # project imports
 from agents.model import UUVModel
@@ -16,6 +18,12 @@ import map
 CURRENT_PATH = os.path.dirname(os.path.abspath(__file__))
 PARENT_DIR = os.path.dirname(CURRENT_PATH)
 
+# Load the logo
+logo_path = os.path.join(PARENT_DIR, "resources", "umass_logo.ico")
+logo_image = Image.open(logo_path)
+
+
+
 
 # setup intial window
 root = tk.Tk()
@@ -25,20 +33,40 @@ app_height = 600
 root.geometry(f'{app_width}x{app_height}')
 root.resizable(False, False)
 
+
+
+#Set logo as root window icon
+logo_photo = ImageTk.PhotoImage(logo_image)
+root.iconphoto(False, logo_photo)
+
 # frames and menus
 sim_menu = tk.Frame(root, width=200, height=app_height, border=5)
 sim_menu.pack(side='left', padx=5, pady=5)
 sim_menu.pack_propagate(False)
-file_menu = tk.Frame(root, background="#325672", width=app_width, height=100, relief="raised", border=5)
+file_menu = tk.Frame(
+    root,
+    width=app_width,
+    height=100,
+    relief="flat",  # Change from "raised" to "flat"
+    border=5
+)
 file_menu.pack(side='bottom', padx=5, pady=5)
 file_menu.pack_propagate(False)
-uuv_info_label = tk.Label(file_menu, text="UUVs: 0", bg="#325672", font=("Arial", 11), anchor="w", justify="left")
+uuv_info_label = tk.Label(file_menu, text="UUVs: 0", font=("Arial", 11), anchor="w", justify="left")
 uuv_info_label.pack(fill="x", padx=10, pady=2)
 
-target_info_label = tk.Label(file_menu, text="Target: None", bg="#325672", font=("Arial", 11), anchor="w", justify="left")
+overlay_panel_attacker = tk.Frame(root, width=200, height=app_height, border=5)
+overlay_panel_attacker.place_forget()  # Hide initially
+overlay_panel_attacker.pack_propagate(False)
+
+overlay_panel_defender = tk.Frame(root, width=200, height=app_height, border=5)
+overlay_panel_defender.place_forget()  # Hide initially
+overlay_panel_defender.pack_propagate(False)
+
+target_info_label = tk.Label(file_menu, text="Target: None", font=("Arial", 11), anchor="w", justify="left")
 target_info_label.pack(fill="x", padx=10, pady=2)
 
-mouse_info_label = tk.Label(file_menu, text="Mouse: None", bg="#325672", font=("Arial", 11), anchor="w")
+mouse_info_label = tk.Label(file_menu, text="Mouse: None", font=("Arial", 11), anchor="w")
 mouse_info_label.pack(fill="x", padx=10, pady=2)
 canvas_frame = tk.Frame(root, background='green', width=700, height=700, relief="raised", border=5)
 canvas_frame.pack(side='top',  padx=5, pady=5)
@@ -47,6 +75,7 @@ canvas_width = 700
 canvas_height = 700
 canvas = tk.Canvas(background="#040404", master=canvas_frame, width=canvas_width, height=canvas_height)
 canvas.pack()
+#---------Mouse cursor coordinate function---------------
 def update_mouse_position(event):
     # Check if current_map is loaded and has necessary attributes
     if current_map is None or not hasattr(current_map, "shp"):
@@ -56,6 +85,47 @@ def update_mouse_position(event):
     mouse_info_label.config(text=f"Mouse: Lat: {lat:.3f}, Lon: {lon:.3f}")
 canvas.bind("<Motion>", update_mouse_position)
 
+#------ Reset Function ---------
+def reset_simulation():
+    global spawn_point, tracker, target_n, target_point, model_test
+
+    # Remove all UUV and target ovals from the canvas
+    for item in canvas.find_all():
+        tags = canvas.gettags(item)
+        if "agent" in tags or "target" in tags or canvas.itemcget(item, "fill") in ["orange", "blue"]:
+            canvas.delete(item)
+
+    # Reset variables
+    spawn_point = []
+    tracker = 0
+    target_n = 0
+    target_point = None
+    model_test = None
+
+    # Reset info labels
+    uuv_info_label.config(text="UUVs: 0")
+    target_info_label.config(text="Target: None")
+    mouse_info_label.config(text="Mouse: None")
+
+    # Reset start button
+    start_btn.config(state="normal", bg="green", text="Start", fg="white", command=on_start_click)
+
+    # Reset canvas frame color
+    canvas_frame.config(bg="green")
+
+    # Rebind mouse click event so you can spawn UUVs/targets again
+    canvas.bind("<Button-1>", handle_click)
+
+def show_spawn_panel_attacker():
+    overlay_panel_attacker.place(x=5, y=5, width=200, height=app_height)
+    overlay_panel_attacker.lift()  # Bring the overlay panel to the top
+    selected_option.set("uuv")     # Ensure UUV radio is highlighted
+
+def show_spawn_panel_defender():
+    overlay_panel_defender.place(x=5, y=5, width=200, height=app_height)
+    overlay_panel_defender.lift()  # Bring the overlay panel to the top
+    selected_option.set("target")  # Ensure Target radio is highlighted
+
 # ----buttton control----
 # start simulation
 spawn_point = []
@@ -63,7 +133,7 @@ target_point = None
 def on_start_click():
     canvas.unbind("<Button-1>")
     start_btn.config(state="disabled")
-    start_btn.config(bg="red")  # Change button color to red
+    start_btn.config(bg="#6E0202")  # Change button color to dark red
     start_btn.config(text="Running...") # Change button text to "Running"
     canvas_frame.config(bg="red")  # Changes canvas outline to red to show running
     global model_test
@@ -71,112 +141,26 @@ def on_start_click():
     model_test = UUVModel(n=tracker, canvas=canvas, spawns=spawn_point, targets=target_point, map=current_map)
     root.after(100, animate)
 
-#buttons start and stop
-start_btn = tk.Button(
-    sim_menu,
-    text="Start",
-    command=on_start_click,
-    bg="green",
-    width=15,         # Number of text units wide
-    height=2,         # Number of text units tall
-    font=("Arial", 16) # Font size
-)
-start_btn.pack(side="top")
-
-
-
-
-# ----radio options----
-
-def check_inside_map(event):
-    """Get a list of items to determine if within boundries"""
-    # get list of items
-    overlapping_itmes = canvas.find_overlapping(event.x, event.y, event.x, event.y)
-
-    is_inside_tag = False
-    for item_id in overlapping_itmes:
-        tags = canvas.gettags(item_id)
-        if "map" in tags:
-            is_inside_tag = True
-            break
-    return is_inside_tag
-
-
-
-# radion fuctions
-tracker = 0
-target_n = 0
-def handle_click(event):
-    """handles the spawning of uuv and target points and updates info labels"""
-    global spawn_point
-    global tracker
-    global target_n
-    global target_point
-    global selected_option
-
-    is_inside_tag = check_inside_map(event=event)
-    print(is_inside_tag)
-    if is_inside_tag == True:
-        if selected_option.get() == "uuv":
-            if tracker != 5:
-                start = canvas.create_oval(event.x-5, event.y-5, event.x + 5, event.y +5, fill="orange")
-                canvas.lift(start)
-                tracker += 1
-                tmp_spw = np.array([event.x, event.y])
-                spawn_point.append(tmp_spw)
-                # Update UUV info label
-                # Inside handle_click, after placing a UUV:
-                uuvs_text = f"UUVs: {tracker}   "
-                uuvs_list = []
-                for idx, spw in enumerate(spawn_point):
-                    lat, lon = current_map.canvas_to_latlon(spw[0], spw[1])
-                    uuvs_list.append(f"{idx+1}: [{lat:.3f}, {lon:.3f}]")
-                lines = [", ".join(uuvs_list[i:i+3]) for i in range(0, len(uuvs_list), 3)]
-                uuvs_text += "\n".join(lines)
-                uuv_info_label.config(text=uuvs_text)
-        elif selected_option.get() == "target":
-            if target_n != 1:
-                target = canvas.create_oval(event.x-5, event.y-5, event.x+5, event.y+5, fill="blue")
-                canvas.lift(target)
-                target_n = 1
-                target_point = np.array([event.x, event.y])
-                # Update Target info label
-                lat, lon = current_map.canvas_to_latlon(target_point[0], target_point[1])
-                target_info_label.config(text=f"Target: [{lat:.3f}, {lon:.3f}]")
-
-
-canvas.bind("<Button-1>", handle_click)
-
-
-#radio buttons select
+# =========================
+# RADIO BUTTON VARIABLE (must be before any radio/button using it)
+# =========================
 selected_option = tk.StringVar()
 selected_option.set("uuv")
 
+def set_spawn_mode(mode):
+    selected_option.set(mode)
 
-uuv_start_radio = tk.Radiobutton(
-    sim_menu,
-    text="Spawn UUV",
-    variable=selected_option,
-    value="uuv",
-    bg="#ED8208",        # Set background color to orange
-    width=15,              # Match Start button width
-    height=2,              # Match Start button height
-    font=("Arial", 16),     # Match Start button font
-    relief="raised"        # Make button appear raised
-)
-target_radio = tk.Radiobutton(
-    sim_menu, 
-    text="Place Target", 
-    variable=selected_option, 
-    value="target",
-    bg = "#A00B0B",
-    width=15,              # Match Start button width
-    height=2,              # Match Start button height
-    font=("Arial", 16),     # Match Start button font
-    relief="raised"        # Make button appear raised
-    )
-uuv_start_radio.pack()
-target_radio.pack()
+# =========================
+# GLOBALS FOR SPAWN TRACKING
+# =========================
+tracker = 0
+target_n = 0
+spawn_point = []
+target_point = None
+
+# =========================
+# Function Definitions Needed for Buttons
+# =========================
 
 file_path = None
 def select_file():
@@ -192,17 +176,210 @@ def select_file():
     else:
         print("no file selected")
 
+def check_inside_map(event):
+    """Get a list of items to determine if within boundaries"""
+    overlapping_items = canvas.find_overlapping(event.x, event.y, event.x, event.y)
+    is_inside_tag = False
+    for item_id in overlapping_items:
+        tags = canvas.gettags(item_id)
+        if "map" in tags:
+            is_inside_tag = True
+            break
+    return is_inside_tag
+
+def handle_click(event):
+    """handles the spawning of uuv and target points and updates info labels"""
+    global spawn_point
+    global tracker
+    global target_n
+    global target_point
+    global selected_option
+
+    is_inside_tag = check_inside_map(event=event)
+    print(is_inside_tag)
+    if is_inside_tag == True:
+        if selected_option.get() == "uuv":
+            if tracker != 5:
+                start = canvas.create_oval(event.x-5, event.y-5, event.x + 5, event.y +5, fill="orange", tags = "agent")
+                canvas.lift(start)
+                tracker += 1
+                tmp_spw = np.array([event.x, event.y])
+                spawn_point.append(tmp_spw)
+                # Update UUV info label
+                uuvs_text = f"UUVs: {tracker}   "
+                uuvs_list = []
+                for idx, spw in enumerate(spawn_point):
+                    lat, lon = current_map.canvas_to_latlon(spw[0], spw[1])
+                    uuvs_list.append(f"{idx+1}: [{lat:.3f}, {lon:.3f}]")
+                lines = [", ".join(uuvs_list[i:i+3]) for i in range(0, len(uuvs_list), 3)]
+                uuvs_text += "\n".join(lines)
+                uuv_info_label.config(text=uuvs_text)
+        elif selected_option.get() == "target":
+            if target_n != 1:
+                target = canvas.create_oval(event.x-5, event.y-5, event.x+5, event.y+5, fill="blue", tags="target")
+                canvas.lift(target)
+                target_n = 1
+                target_point = np.array([event.x, event.y])
+                # Update Target info label
+                lat, lon = current_map.canvas_to_latlon(target_point[0], target_point[1])
+                target_info_label.config(text=f"Target: [{lat:.3f}, {lon:.3f}]")
+
+# =========================
+# EVENT BINDINGS
+# =========================
+# Ensure this is after all relevant definitions
+canvas.bind("<Button-1>", handle_click)
+
+# =========================
+# SIM MENU (SIDEBAR) BUTTONS
+# =========================
+# All sidebar buttons grouped together for clarity
+
 file_button = tk.Button(
     sim_menu,
     text="Open File", 
     command=select_file,
-    bg = "#9604F8",
-    width=15,              # Match Start button width
-    height=2,              # Match Start button height
-    font=("Arial", 16),     # Match Start button font
-    relief="raised"        # Make button appear raised
+    bg = "#333333",
+    fg="white",
+    width=15,
+    height=1,  # Thinner button
+    font=("Arial", 16),
+    relief="raised"
 )
-file_button.pack(side="top")
+start_btn = tk.Button(
+    sim_menu,
+    text="Start",
+    command=on_start_click,
+    bg="green",
+    fg="white",
+    width=15,
+    height=1,  # Thinner button
+    font=("Arial", 16)
+)
+reset_btn = tk.Button(
+    sim_menu,
+    text="Reset",
+    bg="#F70C03",
+    fg="white",
+    width=15,
+    height=1,  # Thinner button
+    font=("Arial", 16),
+    relief="raised",
+    command=lambda: reset_simulation()
+)
+Spawn_Attacker_btn = tk.Button(
+    sim_menu,
+    text="Spawn Attacker",
+    bg="#A70202",
+    fg="white",
+    width=15,
+    height=1,  # Thinner button
+    font=("Arial", 16),
+    relief="raised",
+    command=show_spawn_panel_attacker
+)
+Spawn_Defender_btn = tk.Button(
+    sim_menu,
+    text="Spawn Defender",
+    bg="#2803AD",
+    fg="white",
+    width=15,
+    height=1,  # Thinner button
+    font=("Arial", 16),
+    relief="raised",
+    command=show_spawn_panel_defender
+)
+exit_btn = tk.Button(
+    sim_menu,
+    text="Exit",
+    bg="#333333",
+    fg="white",
+    width=15,
+    height=1,  # Thinner button
+    font=("Arial", 16),
+    relief="raised",
+    command=root.destroy
+)
+
+# Pack all sidebar buttons together
+file_button.pack(side="top", pady=10)
+tk.Label(sim_menu, text="", height=1).pack(side="top")  # Spacer between file button and start/reset buttons
+start_btn.pack(side="top", pady=5)
+reset_btn.pack(side="top", pady=5)
+tk.Label(sim_menu, text="", height=2).pack(side="top")  # Spacer between reset and attacker/defender buttons
+Spawn_Attacker_btn.pack(side="top", pady=5)
+Spawn_Defender_btn.pack(side="top", pady=5)
+exit_btn.pack(side="bottom", pady=10)
+
+# =========================
+# ATTACKER OVERLAY SECTION
+# =========================
+# Attacker overlay panel and buttons grouped together
+
+spawn_uuv_radio = tk.Radiobutton(
+    overlay_panel_attacker,
+    text="Spawn UUV",
+    variable=selected_option,
+    value="uuv",
+    bg="#333333",
+    fg="white",
+    selectcolor="#333333",
+    width=15,
+    height=1,  # Thinner button
+    font=("Arial", 16),
+    relief="raised"
+    # Remove indicatoron=0 to restore radio button functionality
+)
+exit_overlay_btn_attacker = tk.Button(
+    overlay_panel_attacker,
+    text="Back",
+    bg="#F70C03",
+    fg="white",
+    width=15,
+    height=1,
+    font=("Arial", 16),
+    relief="raised",
+    command=lambda: overlay_panel_attacker.place_forget()
+)
+spawn_uuv_radio.pack(side="top", pady=10)
+exit_overlay_btn_attacker.pack(side="bottom", pady=5)
+
+# =========================
+# DEFENDER OVERLAY SECTION
+# =========================
+# Defender overlay panel and buttons grouped together
+
+spawn_target_radio = tk.Radiobutton(
+    overlay_panel_defender,
+    text="Spawn Target",
+    variable=selected_option,
+    value="target",
+    bg="#333333",
+    fg="white",
+    selectcolor="#333333",
+    width=15,
+    height=1,
+    font=("Arial", 16),
+    relief="raised"
+    # Remove indicatoron=0 to restore radio button functionality
+)
+exit_overlay_btn_defender = tk.Button(
+    overlay_panel_defender,
+    text="Back",
+    bg="#F70C03",
+    fg="white",
+    width=15,
+    height=1,
+    font=("Arial", 16),
+    relief="raised",
+    command=lambda: overlay_panel_defender.place_forget()
+)
+spawn_target_radio.pack(side="top", pady=10)
+exit_overlay_btn_defender.pack(side="bottom", pady=10)
+
+# Add a space between file button and radio buttons
+tk.Label(sim_menu, text="", height=2).pack(side="top")
+
 # setup the map to be drawn
 # shape_path = "C:/Users/gtcdu/Downloads/extractedData_harbour_arcmap (1)/zipfolder/Harbour_Depth_Area.shp"
 current_map = None
@@ -223,7 +400,8 @@ def animate():
     """Animation loop that steps the model and updates the canvas."""
     # Schedule the next call to this function after 50 milliseconds
     root.after(50, animate)
-    model_test.step()
+    if model_test is not None:
+        model_test.step()
 
 
 
