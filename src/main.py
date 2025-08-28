@@ -40,7 +40,37 @@ canvas_height = 700
 canvas = tk.Canvas(background="#0A7005", master=canvas_frame, width=canvas_width, height=canvas_height)
 canvas.pack()
 
+# ---gridlabel---
+coord_label = tk.Label(sim_menu, text="Grid Position: (x, y)")
+coord_label.pack(side="top", pady=10)
 
+def update_hover_info(event):
+    """
+    Updates a label with the grid indices of the mouse's current position.
+    """
+    global test_grid
+    
+    if 'test_grid' in globals() and test_grid is not None:
+        grid_size = test_grid.cell_size
+        
+        # Snap the pixel coordinates to the nearest grid point
+        snapped_x = round(event.x / grid_size)
+        snapped_y = round(event.y / grid_size)
+        
+        # Update the label with the grid indices
+        coord_label.config(text=f"Grid Position: ({snapped_x}, {snapped_y})")
+        
+        # Draw a small rectangle to visualize the snapped position
+        # Clear previous hover rectangle if it exists
+        canvas.delete("hover_rect")
+        # Draw the new rectangle at the snapped pixel position
+        x1 = snapped_x * grid_size - grid_size / 2
+        y1 = snapped_y * grid_size - grid_size / 2
+        x2 = x1 + grid_size
+        y2 = y1 + grid_size
+        
+        canvas.create_rectangle(x1, y1, x2, y2, outline="white", width=2, tags="hover_rect")
+ 
 
 
 # ----buttton control----
@@ -52,7 +82,8 @@ def on_start_click():
     start_btn.config(state="disabled")
     global model_test
     global spawn_point
-    model_test = UUVModel(n=tracker, canvas=canvas, spawns=spawn_point, targets=target_point, map=current_map)
+    print(spawn_point)
+    model_test = UUVModel(n=tracker, canvas=canvas, spawns=spawn_point, targets=target_point, map=current_map, grid=test_grid.grid)
     root.after(100, animate)
 
 #buttons start and stop
@@ -78,40 +109,69 @@ def check_inside_map(event):
     return is_inside_tag
 
 
-
 # radion fuctions
 tracker = 0
 target_n = 0
 def handle_click(event):
-    """handles the spawning of uuv and target points"""
+    """
+    Handles the spawning of UUV and target points, snapping them to the grid.
+    Their positions are stored as grid indices, not pixel coordinates.
+    """
     global spawn_point
     global tracker
     global target_n
     global target_point
     global selected_option
+    global test_grid
 
     is_inside_tag = check_inside_map(event=event)
-    print(is_inside_tag)
+
     if is_inside_tag == True:
+        # Check if the grid object exists before trying to access its attributes
+        if 'test_grid' in globals() and test_grid is not None:
+            grid_size = test_grid.cell_size
+            
+            # Snap the clicked pixel coordinates to the nearest grid point
+            snapped_x = round(event.x / grid_size) * grid_size
+            snapped_y = round(event.y / grid_size) * grid_size
+
+            # Convert the snapped pixel coordinates to grid indices
+            # The indices are the row and column in the 2D list
+            grid_x = int(round(snapped_x / grid_size))
+            grid_y = int(round(snapped_y / grid_size))
+        else:
+            # Fallback to pixel coordinates if the grid is not yet created
+            snapped_x = event.x
+            snapped_y = event.y
+            grid_x = int(event.x)
+            grid_y = int(event.y)
+
         if selected_option.get()=="uuv":
             if tracker != 5:
-                start = canvas.create_oval(event.x-5, event.y-5, event.x + 5, event.y +5, fill="green")
+                # Use the snapped pixel coordinates for drawing the circle on the canvas
+                start = canvas.create_oval(snapped_x-5, snapped_y-5, snapped_x + 5, snapped_y +5, fill="green")
                 canvas.lift(start)
                 tracker += 1
-                tmp_spw = np.array([event.x, event.y])
+                # Store the grid indices in the spawn_point list
+                tmp_spw = [grid_y, grid_x]
+                print(test_grid.grid[grid_y][grid_x])
                 spawn_point.append(tmp_spw)
         elif selected_option.get()=="target":
             if target_n != 1:
-                target = start = canvas.create_oval(event.x-5, event.y-5, event.x+5, event.y+5, fill="red")
+                # Use the snapped pixel coordinates for drawing the circle
+                target = canvas.create_oval(snapped_x-5, snapped_y-5, snapped_x+5, snapped_y+5, fill="red")
                 canvas.lift(target)
                 target_n = 1
-                target_point = np.array([event.x, event.y])
+                # Store the grid indices for the target point
+                target_point = [grid_y, grid_x]
+                print(test_grid.grid[grid_y][grid_x])
 
 def show_depth(event):
     current_map.depth_loc(event.x, event.y)
 
 canvas.bind("<Button-1>", handle_click)
 canvas.bind("<Button-3>", show_depth)
+canvas.bind("<Motion>", update_hover_info)
 
 #radio buttons select
 selected_option = tk.StringVar()
@@ -129,6 +189,7 @@ def select_file():
     global file_path
     file_path = "C:/Users/gtcdu/Downloads/extractedData_harbour_arcmap (1)/zipfolder/Harbour_Depth_Area.shp"
     create_map(file_path)
+    file_button.config(state="disabled")
     # file_path = fd.askopenfilename(title="Selct a shapfile",
     #                            initialdir="/", 
     #                            filetypes=[("Shape files", "*.shp")]
@@ -168,7 +229,9 @@ def animate():
 
 # ----grid testing----
 def create_grid():
+    global test_grid
     test_grid = Grid(width=canvas_width, height=canvas_height, cells_n=50, canvas=canvas)
+
 
 root.mainloop()
 
