@@ -22,9 +22,6 @@ PARENT_DIR = os.path.dirname(CURRENT_PATH)
 logo_path = os.path.join(PARENT_DIR, "resources", "umass_logo.ico")
 logo_image = Image.open(logo_path)
 
-
-
-
 # setup intial window
 root = tk.Tk()
 root.title("fixing agents, adding placement, starting")
@@ -32,8 +29,6 @@ app_width = 800
 app_height = 600
 root.geometry(f'{app_width}x{app_height}')
 root.resizable(False, False)
-
-
 
 #Set logo as root window icon
 logo_photo = ImageTk.PhotoImage(logo_image)
@@ -43,13 +38,7 @@ root.iconphoto(False, logo_photo)
 sim_menu = tk.Frame(root, width=200, height=app_height, border=5)
 sim_menu.pack(side='left', padx=5, pady=5)
 sim_menu.pack_propagate(False)
-file_menu = tk.Frame(
-    root,
-    width=app_width,
-    height=100,
-    relief="flat",  # Change from "raised" to "flat"
-    border=5
-)
+file_menu = tk.Frame(root, width=app_width, height=100, relief="flat",)
 file_menu.pack(side='bottom', padx=5, pady=5)
 file_menu.pack_propagate(False)
 uuv_info_label = tk.Label(file_menu, text="UUVs: 0", font=("Arial", 11), anchor="w", justify="left")
@@ -85,9 +74,13 @@ def update_mouse_position(event):
     mouse_info_label.config(text=f"Mouse: Lat: {lat:.3f}, Lon: {lon:.3f}")
 canvas.bind("<Motion>", update_mouse_position)
 
+# Add a global to track simulation state
+is_running = False
+animation_job = None
+
 #------ Reset Function ---------
 def reset_simulation():
-    global spawn_point, tracker, target_n, target_point, model_test
+    global spawn_point, tracker, target_n, target_point, model_test, is_running, animation_job
 
     # Remove all UUV and target ovals from the canvas
     for item in canvas.find_all():
@@ -101,7 +94,11 @@ def reset_simulation():
     target_n = 0
     target_point = None
     model_test = None
-
+    # Cancel animation if running
+    if animation_job:
+        root.after_cancel(animation_job)
+        animation_job = None
+    is_running = False
     # Reset info labels
     uuv_info_label.config(text="UUVs: 0")
     target_info_label.config(text="Target: None")
@@ -131,15 +128,36 @@ def show_spawn_panel_defender():
 spawn_point = []
 target_point = None
 def on_start_click():
-    canvas.unbind("<Button-1>")
-    start_btn.config(state="disabled")
-    start_btn.config(bg="#6E0202")  # Change button color to dark red
-    start_btn.config(text="Running...") # Change button text to "Running"
-    canvas_frame.config(bg="red")  # Changes canvas outline to red to show running
-    global model_test
-    global spawn_point
-    model_test = UUVModel(n=tracker, canvas=canvas, spawns=spawn_point, targets=target_point, map=current_map)
-    root.after(100, animate)
+    global is_running, animation_job, model_test
+    if not is_running:
+        # Resume simulation if model_test exists, otherwise start new
+        canvas.unbind("<Button-1>")
+        start_btn.config(state="normal", bg="#005000", text="⏸ Running...", fg="white", command=on_start_click)  # Dark green
+        canvas_frame.config(bg="#005000")  # Change border to dark green when running
+        global spawn_point
+        if model_test is None:
+            model_test = UUVModel(n=tracker, canvas=canvas, spawns=spawn_point, targets=target_point, map=current_map)
+        is_running = True
+        # Start animation loop immediately and keep it running
+        animate()
+    else:
+        # Pause simulation
+        if animation_job:
+            root.after_cancel(animation_job)
+            animation_job = None
+        start_btn.config(state="normal", bg="green", text="▶ Start", fg="white", command=on_start_click)  # Play symbol
+        canvas_frame.config(bg="green")
+        is_running = False
+        # Re-enable UUV/target placement when paused
+        canvas.bind("<Button-1>", handle_click)
+
+def animate():
+    global animation_job
+    if is_running and model_test is not None:
+        model_test.step()
+        animation_job = root.after(50, animate)
+    else:
+        animation_job = None
 
 # =========================
 # RADIO BUTTON VARIABLE (must be before any radio/button using it)
@@ -157,6 +175,7 @@ tracker = 0
 target_n = 0
 spawn_point = []
 target_point = None
+model_test = None  # <-- Ensure this is defined globally
 
 # =========================
 # Function Definitions Needed for Buttons
@@ -248,7 +267,7 @@ file_button = tk.Button(
 )
 start_btn = tk.Button(
     sim_menu,
-    text="Start",
+    text="▶ Start",  # Add play symbol
     command=on_start_click,
     bg="green",
     fg="white",
@@ -397,11 +416,12 @@ def create_map(shape_path):
 
 # reantimate the canvas to see changes(UUV-agent-based)the oragne one
 def animate():
-    """Animation loop that steps the model and updates the canvas."""
-    # Schedule the next call to this function after 50 milliseconds
-    root.after(50, animate)
-    if model_test is not None:
+    global animation_job
+    if is_running and model_test is not None:
         model_test.step()
+        animation_job = root.after(50, animate)
+    else:
+        animation_job = None
 
 
 
