@@ -21,6 +21,7 @@ class UUVModel(mesa.Model):
         # Grid stuff
         self.grid = grid
 
+
         #create agents
         for _ in range(self.num_agents):
             tmp_spwn = self.spawns[_]

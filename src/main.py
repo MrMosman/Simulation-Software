@@ -82,7 +82,7 @@ def on_start_click():
     start_btn.config(state="disabled")
     global model_test
     global spawn_point
-    print(spawn_point)
+    # print(spawn_point)
     model_test = UUVModel(n=tracker, canvas=canvas, spawns=spawn_point, targets=target_point, map=current_map, grid=test_grid.grid)
     root.after(100, animate)
 
@@ -154,7 +154,7 @@ def handle_click(event):
                 tracker += 1
                 # Store the grid indices in the spawn_point list
                 tmp_spw = [grid_y, grid_x]
-                print(test_grid.grid[grid_y][grid_x])
+                # print(test_grid.grid[grid_y][grid_x])
                 spawn_point.append(tmp_spw)
         elif selected_option.get()=="target":
             if target_n != 1:
@@ -164,7 +164,7 @@ def handle_click(event):
                 target_n = 1
                 # Store the grid indices for the target point
                 target_point = [grid_y, grid_x]
-                print(test_grid.grid[grid_y][grid_x])
+                # print(test_grid.grid[grid_y][grid_x])
 
 def show_depth(event):
     current_map.depth_loc(event.x, event.y)

@@ -10,7 +10,7 @@ class Cell:
 
         # parrent row and col index
         self.parent_row_i = 0 
-        self.parent_col_i = 0
+        self.parent_col_j = 0
 
         # position
         self.pos_x = 0
