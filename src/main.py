@@ -9,10 +9,11 @@ import os
 from PIL import Image
 from PIL import ImageTk 
 
+
 # project imports
 from agents.model import UUVModel
 import map
-
+from grid import Grid
 
 # For navigating the project
 CURRENT_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -62,7 +63,7 @@ canvas_frame.pack(side='top',  padx=5, pady=5)
 
 canvas_width = 700
 canvas_height = 700
-canvas = tk.Canvas(background="#040404", master=canvas_frame, width=canvas_width, height=canvas_height)
+canvas = tk.Canvas(background="#0A7005", master=canvas_frame, width=canvas_width, height=canvas_height)
 canvas.pack()
 #---------Mouse cursor coordinate function---------------
 def update_mouse_position(event):
@@ -136,7 +137,8 @@ def on_start_click():
         canvas_frame.config(bg="#005000")  # Change border to dark green when running
         global spawn_point
         if model_test is None:
-            model_test = UUVModel(n=tracker, canvas=canvas, spawns=spawn_point, targets=target_point, map=current_map)
+            # print(spawn_point)
+    model_test = UUVModel(n=tracker, canvas=canvas, spawns=spawn_point, targets=target_point, map=current_map, grid=test_grid.grid)
         is_running = True
         # Start animation loop immediately and keep it running
         animate()
@@ -206,23 +208,53 @@ def check_inside_map(event):
             break
     return is_inside_tag
 
+
+# radion fuctions
+tracker = 0
+target_n = 0
 def handle_click(event):
-    """handles the spawning of uuv and target points and updates info labels"""
+    """
+    Handles the spawning of UUV and target points and updates info labels, snapping them to the grid.
+    Their positions are stored as grid indices, not pixel coordinates.
+    """
     global spawn_point
     global tracker
     global target_n
     global target_point
     global selected_option
+    global test_grid
 
     is_inside_tag = check_inside_map(event=event)
-    print(is_inside_tag)
+
     if is_inside_tag == True:
+        # Check if the grid object exists before trying to access its attributes
+        if 'test_grid' in globals() and test_grid is not None:
+            grid_size = test_grid.cell_size
+            
+            # Snap the clicked pixel coordinates to the nearest grid point
+            snapped_x = round(event.x / grid_size) * grid_size
+            snapped_y = round(event.y / grid_size) * grid_size
+
+            # Convert the snapped pixel coordinates to grid indices
+            # The indices are the row and column in the 2D list
+            grid_x = int(round(snapped_x / grid_size))
+            grid_y = int(round(snapped_y / grid_size))
+        else:
+            # Fallback to pixel coordinates if the grid is not yet created
+            snapped_x = event.x
+            snapped_y = event.y
+            grid_x = int(event.x)
+            grid_y = int(event.y)
+
         if selected_option.get() == "uuv":
             if tracker != 5:
-                start = canvas.create_oval(event.x-5, event.y-5, event.x + 5, event.y +5, fill="orange", tags = "agent")
+                # Use the snapped pixel coordinates for drawing the circle on the canvas
+                start = canvas.create_oval(snapped_x-5, snapped_y-5, snapped_x + 5, snapped_y +5, fill="green")
                 canvas.lift(start)
                 tracker += 1
-                tmp_spw = np.array([event.x, event.y])
+                # Store the grid indices in the spawn_point list
+                tmp_spw = [grid_y, grid_x]
+                # print(test_grid.grid[grid_y][grid_x])
                 spawn_point.append(tmp_spw)
                 # Update UUV info label
                 uuvs_text = f"UUVs: {tracker}   "
@@ -235,19 +267,26 @@ def handle_click(event):
                 uuv_info_label.config(text=uuvs_text)
         elif selected_option.get() == "target":
             if target_n != 1:
-                target = canvas.create_oval(event.x-5, event.y-5, event.x+5, event.y+5, fill="blue", tags="target")
+                # Use the snapped pixel coordinates for drawing the circle
+                target = canvas.create_oval(snapped_x-5, snapped_y-5, snapped_x+5, snapped_y+5, fill="red")
                 canvas.lift(target)
                 target_n = 1
-                target_point = np.array([event.x, event.y])
+                # Store the grid indices for the target point
+                target_point = [grid_y, grid_x]
+                # print(test_grid.grid[grid_y][grid_x])
                 # Update Target info label
                 lat, lon = current_map.canvas_to_latlon(target_point[0], target_point[1])
                 target_info_label.config(text=f"Target: [{lat:.3f}, {lon:.3f}]")
 
+def show_depth(event):
+    current_map.depth_loc(event.x, event.y)
 # =========================
 # EVENT BINDINGS
 # =========================
 # Ensure this is after all relevant definitions
 canvas.bind("<Button-1>", handle_click)
+canvas.bind("<Button-3>", show_depth)
+canvas.bind("<Motion>", update_hover_info)
 
 # =========================
 # SIM MENU (SIDEBAR) BUTTONS
@@ -408,6 +447,7 @@ def create_map(shape_path):
     deep_color = (0, 0, 26)
     global current_map
     current_map = map.MapControl(shape_path=shape_path, canvas=canvas, shallow_color=shallow_color, deep_color=deep_color)
+    create_grid()
 
 
 
@@ -424,6 +464,11 @@ def animate():
         animation_job = None
 
 
+
+# ----grid testing----
+def create_grid():
+    global test_grid
+    test_grid = Grid(width=canvas_width, height=canvas_height, cells_n=50, canvas=canvas)
 
 
 root.mainloop()
