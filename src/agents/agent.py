@@ -10,11 +10,6 @@ from shapely.geometry import Point, shape
 from map import MapControl
 from cell import Cell
 
-
-
-
-
-
 class UUVAgent(mesa.Agent):
     """UUV agent testing class"""
 
@@ -74,6 +69,10 @@ class UUVAgent(mesa.Agent):
                 return unit_vector
             else:
                 self.path.pop(0)
+                # Defensive: check if path is empty before accessing
+                if not self.path or len(self.path) == 0:
+                    print("No path available")
+                    return [0, 0]
                 tmp = self.path[0]
                 self.next_target = self.grid[tmp[0]][tmp[1]]
                 print(f'next target: {self.next_target}')

@@ -9,7 +9,6 @@ import os
 from PIL import Image
 from PIL import ImageTk 
 
-
 # project imports
 from agents.model import UUVModel
 import map
@@ -56,30 +55,34 @@ overlay_panel_defender.pack_propagate(False)
 target_info_label = tk.Label(file_menu, text="Target: None", font=("Arial", 11), anchor="w", justify="left")
 target_info_label.pack(fill="x", padx=10, pady=2)
 
-mouse_info_label = tk.Label(file_menu, text="Mouse: None", font=("Arial", 11), anchor="w")
-mouse_info_label.pack(fill="x", padx=10, pady=2)
+coord_label = tk.Label(file_menu, text="Grid Position: (x, y) | [lat, lon]", font=("Arial", 11), anchor="w")
+coord_label.pack(fill="x", padx=10, pady=2)
+
+# ---gridlabel---
+# coord_label = tk.Label(sim_menu, text="Grid Position: (x, y)")
+# coord_label.pack(side="top", pady=10)
+
+# Remove mouse_info_label definition and packing
+# mouse_info_label = tk.Label(file_menu, text="Mouse: None", font=("Arial", 11), anchor="w")
+# mouse_info_label.pack(fill="x", padx=10, pady=2)
 canvas_frame = tk.Frame(root, background='green', width=700, height=700, relief="raised", border=5)
 canvas_frame.pack(side='top',  padx=5, pady=5)
 
 canvas_width = 700
 canvas_height = 700
-canvas = tk.Canvas(background="#0A7005", master=canvas_frame, width=canvas_width, height=canvas_height)
+canvas = tk.Canvas(background="#040404", master=canvas_frame, width=canvas_width, height=canvas_height)  # Initial background black
 canvas.pack()
 #---------Mouse cursor coordinate function---------------
 def update_mouse_position(event):
-    # Check if current_map is loaded and has necessary attributes
-    if current_map is None or not hasattr(current_map, "shp"):
-        mouse_info_label.config(text="Mouse: None")
-        return
-    lat, lon = current_map.canvas_to_latlon(event.x, event.y)
-    mouse_info_label.config(text=f"Mouse: Lat: {lat:.3f}, Lon: {lon:.3f}")
+    # Remove contents, or leave as a stub if still bound elsewhere
+    pass
 canvas.bind("<Motion>", update_mouse_position)
 
 # Add a global to track simulation state
 is_running = False
 animation_job = None
 
-#------ Reset Function ---------
+# ------ Reset Function ---------
 def reset_simulation():
     global spawn_point, tracker, target_n, target_point, model_test, is_running, animation_job
 
@@ -103,7 +106,7 @@ def reset_simulation():
     # Reset info labels
     uuv_info_label.config(text="UUVs: 0")
     target_info_label.config(text="Target: None")
-    mouse_info_label.config(text="Mouse: None")
+    coord_label.config(text="Grid Position: (x, y) | [lat, lon]")
 
     # Reset start button
     start_btn.config(state="normal", bg="green", text="Start", fg="white", command=on_start_click)
@@ -138,7 +141,14 @@ def on_start_click():
         global spawn_point
         if model_test is None:
             # print(spawn_point)
-    model_test = UUVModel(n=tracker, canvas=canvas, spawns=spawn_point, targets=target_point, map=current_map, grid=test_grid.grid)
+            model_test = UUVModel(
+                n=tracker,
+                canvas=canvas,
+                spawns=spawn_point,
+                targets=target_point,
+                map=current_map,
+                grid=test_grid.grid
+            )
         is_running = True
         # Start animation loop immediately and keep it running
         animate()
@@ -249,7 +259,7 @@ def handle_click(event):
         if selected_option.get() == "uuv":
             if tracker != 5:
                 # Use the snapped pixel coordinates for drawing the circle on the canvas
-                start = canvas.create_oval(snapped_x-5, snapped_y-5, snapped_x + 5, snapped_y +5, fill="green")
+                start = canvas.create_oval(snapped_x-5, snapped_y-5, snapped_x + 5, snapped_y +5, fill="red", tags="agent")  # UUVs red
                 canvas.lift(start)
                 tracker += 1
                 # Store the grid indices in the spawn_point list
@@ -268,7 +278,7 @@ def handle_click(event):
         elif selected_option.get() == "target":
             if target_n != 1:
                 # Use the snapped pixel coordinates for drawing the circle
-                target = canvas.create_oval(snapped_x-5, snapped_y-5, snapped_x+5, snapped_y+5, fill="red")
+                target = canvas.create_oval(snapped_x-5, snapped_y-5, snapped_x+5, snapped_y+5, fill="blue", tags="target")  # Targets blue
                 canvas.lift(target)
                 target_n = 1
                 # Store the grid indices for the target point
@@ -284,6 +294,34 @@ def show_depth(event):
 # EVENT BINDINGS
 # =========================
 # Ensure this is after all relevant definitions
+def update_hover_info(event):
+    """
+    Updates a label with the grid indices and geographic coordinates of the mouse's current position.
+    """
+    global test_grid, current_map
+
+    if 'test_grid' in globals() and test_grid is not None:
+        grid_size = test_grid.cell_size
+
+        # Snap the pixel coordinates to the nearest grid point
+        snapped_x = round(event.x / grid_size)
+        snapped_y = round(event.y / grid_size)
+
+        # Get geographic coordinates if map is loaded
+        if current_map is not None and hasattr(current_map, "canvas_to_latlon"):
+            lat, lon = current_map.canvas_to_latlon(snapped_y * grid_size, snapped_x * grid_size)
+            coord_label.config(text=f"Grid Position: ({snapped_x}, {snapped_y}) | [{lat:.3f}, {lon:.3f}]")
+        else:
+            coord_label.config(text="Grid Position: (x, y) | [lat, lon]")
+
+        # Draw a small rectangle to visualize the snapped position
+        canvas.delete("hover_rect")
+        x1 = snapped_x * grid_size - grid_size / 2
+        y1 = snapped_y * grid_size - grid_size / 2
+        x2 = x1 + grid_size
+        y2 = y1 + grid_size
+        canvas.create_rectangle(x1, y1, x2, y2, outline="white", width=2, tags="hover_rect")
+
 canvas.bind("<Button-1>", handle_click)
 canvas.bind("<Button-3>", show_depth)
 canvas.bind("<Motion>", update_hover_info)
@@ -448,6 +486,7 @@ def create_map(shape_path):
     global current_map
     current_map = map.MapControl(shape_path=shape_path, canvas=canvas, shallow_color=shallow_color, deep_color=deep_color)
     create_grid()
+    canvas.config(background="#0A7005")  # Change background to green after loading map
 
 
 
