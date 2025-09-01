@@ -3,6 +3,7 @@ import math
 import tkinter as tk
 import numpy as np
 from cell import Cell
+from map import MapControl
 
 class Grid:
 

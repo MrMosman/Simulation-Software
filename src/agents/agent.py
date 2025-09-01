@@ -32,7 +32,9 @@ class UUVAgent(mesa.Agent):
         self.canvas.lift(self.oval)
 
         #varibles
+        self.depth_preferd = [10, 20]
         self.depth_min = 5
+        self.depth_max = 30
         # self.current_depth = self.map.depth_loc(x=self.position[0], y=self.position[1])
 
         # Serch parameters
@@ -45,7 +47,7 @@ class UUVAgent(mesa.Agent):
         # print(self.path[0])
         tmp = self.path[0]
         self.next_target = self.grid[tmp[0]][tmp[1]]
-        print(self.next_target)
+        # print(self.next_target)
     
     def getTargetDir(self):
         target_x = self.next_target.pos_x
@@ -85,9 +87,6 @@ class UUVAgent(mesa.Agent):
     def move_to_target(self):
         """simple move towards target set function"""
         new_direction = self.getTargetDir()
-        print(f'{self.target}--{self.position}')
-        print((self.position[1] != self.target[1]))
-        print((self.position[0] != self.target[0]))
         if (self.position[0] != self.target[0]) or (self.position[1] != self.target[1]):
             new_x = np.round(new_direction[0]).astype(int)
             new_y = np.round(new_direction[1]).astype(int)

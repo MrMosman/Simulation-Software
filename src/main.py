@@ -24,7 +24,7 @@ logo_image = Image.open(logo_path)
 
 # setup intial window
 root = tk.Tk()
-root.title("fixing agents, adding placement, starting")
+root.title("Simulation")
 app_width = 800
 app_height = 600
 root.geometry(f'{app_width}x{app_height}')
@@ -84,6 +84,7 @@ animation_job = None
 
 # ------ Reset Function ---------
 def reset_simulation():
+    """Resets the simulation"""
     global spawn_point, tracker, target_n, target_point, model_test, is_running, animation_job
 
     # Remove all UUV and target ovals from the canvas
@@ -477,7 +478,6 @@ exit_overlay_btn_defender.pack(side="bottom", pady=10)
 tk.Label(sim_menu, text="", height=2).pack(side="top")
 
 # setup the map to be drawn
-# shape_path = "C:/Users/gtcdu/Downloads/extractedData_harbour_arcmap (1)/zipfolder/Harbour_Depth_Area.shp"
 current_map = None
 def create_map(shape_path):
     """creates the current map"""
