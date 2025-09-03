@@ -121,10 +121,11 @@ class MapControl():
             geometry = row['geometry']
             depth1 = row["DRVAL1"]
             depth2 = row["DRVAL2"]   
+            print(geometry.geom_type)
             # Check if the geometry is a Polygon
             if geometry.geom_type == 'Polygon':
                 # Get the exterior coordinates
-                exterior_coords = list(geometry.exterior.coords)     
+                exterior_coords = list(geometry.exterior.coords) 
                 # Apply scaling to each coordinate(so can control the size)
                 scaled_coords = []
                 for x_geo, y_geo  in exterior_coords:
@@ -137,9 +138,22 @@ class MapControl():
                 # Draw the scaled polygon on the canvas and store in dictinary
                 id=self.canvas.create_polygon(scaled_coords, fill=fill_color, width=0, tags="map")
                 self.polygon_ids[id]={"depth1": depth1, "depth2": depth2, "color": fill_color}
-                print(self.polygon_ids[id])
-            else:
-                print()
+            elif geometry.geom_type == 'MultiPolygon':
+                # Iterate through each polygon within the MultiPolygon cause i was lazy
+                for polygon in geometry.geoms:
+                    # Check if the sub-geometry is a Polygon
+                    if polygon.geom_type == 'Polygon':
+                        exterior_coords = list(polygon.exterior.coords)
+                        scaled_coords = []
+                        for x_geo, y_geo in exterior_coords:
+                            new_x = (x_geo - minx) * scale
+                            new_y = (maxy - y_geo) * scale
+                            scaled_coords.extend([new_x, new_y])
+
+                        fill_color = self.set_depth_color(depth2, self.min_depth, self.max_depth)
+                        id = self.canvas.create_polygon(scaled_coords, fill=fill_color, width=0, tags="map")
+                        self.polygon_ids[id] = {"depth1": depth1, "depth2": depth2, "color": fill_color}
+               
 
     def canvas_to_latlon(self, x_canvas, y_canvas):
         minx, miny, maxx, maxy = self.shp.total_bounds
