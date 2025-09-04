@@ -5,6 +5,8 @@ import pandas as pd
 import mesa
 import geopandas as gpd
 from shapely.geometry import Point, shape
+from salinity import Salinity
+from temperature import Temperature
 
 #user defined
 from map import MapControl
@@ -24,7 +26,8 @@ class UUVAgent(mesa.Agent):
         self.target = [grid[target[0]][target[1]].pos_x, grid[target[0]][target[1]].pos_y]
         # print(f'pos={self.position}')
         # print(f'tar={self.target}')
-
+        self.salinity = Salinity()
+        self.temp = Temperature()
         # tkinter gui
         self.map = map
         self.canvas = canvas
@@ -95,6 +98,24 @@ class UUVAgent(mesa.Agent):
             self.position = np.array([self.position[0] + new_x, self.position[1]+new_y])
             self.canvas.move(self.oval, new_x, new_y)     
             self.canvas.itemconfig(self.oval, fill="red")  # Change color to red while moving
+
+            nearest_salinity_point = self.salinity.find_nearest_point(self.position)
+            if nearest_salinity_point:
+                top_salinity = nearest_salinity_point["top_salinity"]
+                bottom_salinity = nearest_salinity_point["bottom_salinity"]
+                print(f"Agent at position {self.position} is near salinity point {nearest_salinity_point['coordinates']}")
+                print(f"Top Salinity in ppt: {top_salinity}, Bottom Salinity in ppt: {bottom_salinity}")
+            else:
+                print(f"No salinity data found for agent at position {self.position}")     
+
+            nearest_temp_point = self.temp.find_nearest_point(self.position) #Find nearest termperature point
+            if nearest_temp_point:
+                top_temp = nearest_temp_point["top_temp"]
+                bottom_temp = nearest_temp_point["bottom_temp"]
+                print(f"Agent at position {self.position} is near temp point {nearest_temp_point['coordinates']}")
+                print(f"Top temp in C: {top_temp}, Bottom temp in C: {bottom_temp}")
+            else:
+                print(f"No temp data found for agent at position {self.position}")   
   
 
     def a_star_search(self):
