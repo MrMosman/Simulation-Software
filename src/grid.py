@@ -20,6 +20,9 @@ class Grid:
         self.draw_test_grid()
 
     def get_cell_spacing(self, length):
+        """
+        returns the cell spacing for the grid
+        """
         width = 1
         total_obj_width = self.cells_n * width
         remaining_space = length - total_obj_width
@@ -60,6 +63,9 @@ class Grid:
             pos_x = 0
 
     def __str__(self):
+        """
+        for debugging purposes
+        """
         print(len(self.grid))
         grid_string = ""
         for row in self.grid:

@@ -29,11 +29,8 @@ class UUVAgent(mesa.Agent):
         #varibles
         self.depth_preferd = [10, 20]
         self.depth_min = 5
-<<<<<<< Updated upstream
         self.depth_max = 30
         # self.current_depth = self.map.depth_loc(x=self.position[0], y=self.position[1])
-=======
->>>>>>> Stashed changes
 
         # Serch parameters
         self.grid = np.array(grid)
@@ -43,12 +40,8 @@ class UUVAgent(mesa.Agent):
         self.a_star_search()
         tmp = self.path[0]
         self.next_target = self.grid[tmp[0]][tmp[1]]
-<<<<<<< Updated upstream
         # print(self.next_target)
     
-=======
-
->>>>>>> Stashed changes
     def getTargetDir(self):
         target_x = self.next_target.pos_x
         target_y = self.next_target.pos_y

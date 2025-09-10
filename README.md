@@ -1,5 +1,8 @@
 # University of Massachusetts Dartmouth UUV SIM
 
+### 9/3/25
+* fixed the map to hanlde Multipolygon
+
 ### 8/27/25
 * Added both the cell.py and grid.py for the A* algor
 * reverted to older map_init as was mergeing islands

@@ -154,7 +154,6 @@ class MapControl():
                         id = self.canvas.create_polygon(scaled_coords, fill=fill_color, width=0, tags="map")
                         self.polygon_ids[id] = {"depth1": depth1, "depth2": depth2, "color": fill_color}
                
-
     def canvas_to_latlon(self, x_canvas, y_canvas):
         minx, miny, maxx, maxy = self.shp.total_bounds
         geo_width = maxx - minx
