@@ -167,4 +167,3 @@ class MapControl():
         y_geo = maxy - (y_canvas / scale)
         return x_geo, y_geo
 
-
