@@ -9,6 +9,34 @@ import os
 from PIL import Image
 from PIL import ImageTk 
 
+# ---------------------------------------------------------------------------------
+# How to Make a New Agent Spawnable via the Agent Panel (Step-by-Step Guide)
+#
+# 1. Create a New Spawner Class:
+#    - Subclass AgentSpawner (see SeekerSpawner/TargetSpawner for examples).
+#    - Implement the spawn(self, name, x, y) method with your custom logic.
+#
+# 2. Register Your Spawner:
+#    - Add your spawner to the spawner_registry dictionary:
+#      Example:
+#      spawner_registry = {
+#          "Seeker": lambda: SeekerSpawner(...),
+#          "Target": lambda: TargetSpawner(...),
+#          "MyAgent": lambda: MyAgentSpawner(...),  # <-- Add this line
+#      }
+#
+# 3. Add to Agent Panel Dropdown:
+#    - In show_agent_panel(), update the update_dropdown() function to include your agent type:
+#      Example:
+#      if mode_var.get() == "Attacker":
+#          options = ["Seeker", "MyAgent"]  # <-- Add your agent here
+#
+# 4. Done!
+#    - Your new agent type will now appear in the agent panel and can be spawned via the GUI.
+#
+# Note: If your agent is a "Defender", add it to the Defender options instead.
+# ---------------------------------------------------------------------------------
+
 # --- Agent Spawner Classes ---
 class AgentSpawner:
     def __init__(self, canvas, test_grid, current_map, uuv_info_label, target_info_label, spawn_point, tracker, target_point, target_n):
@@ -126,7 +154,7 @@ def run_gui(UUVModel, map, Grid):
     coord_label.pack(fill="x", padx=10, pady=2)
 
     canvas_frame = tk.Frame(root, background='#333333', width=700, height=700, relief="raised", border=5)
-    canvas_frame.pack(side='top',  padx=5, pady=5)
+    canvas_frame.pack(side='left',  padx=5, pady=5)
     canvas_frame.pack_propagate(False)  # Prevent frame from resizing to fit canvas
 
     canvas_width = 700  # Keep this fixed
@@ -155,17 +183,15 @@ def run_gui(UUVModel, map, Grid):
     # Add a flag to control spawn mode
     spawn_mode_enabled = [False]
 
-    # Enables agent spawn mode (binds left-click to handle_click)
     def enable_spawn_mode():
         spawn_mode_enabled[0] = True
         canvas.bind("<Button-1>", handle_click)
 
-    # Disables agent spawn mode (unbinds left-click)
     def disable_spawn_mode():
         spawn_mode_enabled[0] = False
         canvas.unbind("<Button-1>")
 
-    # Resets the simulation state and UI to initial values
+    # ------ Reset Function ---------
     def reset_simulation():
         nonlocal spawn_point, tracker, target_n, target_point, model_test, is_running, animation_job
         for item in canvas.find_all():
@@ -189,7 +215,6 @@ def run_gui(UUVModel, map, Grid):
         disable_spawn_mode()
         canvas.bind("<Button-1>", handle_click)
 
-    # Shows the overlay panel for spawning UUVs (attackers)
     def show_spawn_panel_attacker():
         x = sim_menu.winfo_x()
         y = sim_menu.winfo_y()
@@ -199,7 +224,6 @@ def run_gui(UUVModel, map, Grid):
         overlay_panel_attacker.lift()
         selected_option.set("uuv")
 
-    # Shows the overlay panel for spawning targets (defenders)
     def show_spawn_panel_defender():
         x = sim_menu.winfo_x()
         y = sim_menu.winfo_y()
@@ -209,8 +233,6 @@ def run_gui(UUVModel, map, Grid):
         overlay_panel_defender.lift()
         selected_option.set("target")
 
-    # Opens the agent panel for adding agents with custom names/types
-    # Usage: Allows user to select agent type and spawn by clicking on the map
     def show_agent_panel():
         agent_window = tk.Toplevel(root)
         agent_window.title("Add Agent")
@@ -318,8 +340,6 @@ def run_gui(UUVModel, map, Grid):
         )
         close_btn.pack(anchor="e")
 
-    # Spawns an agent of the given type at (x, y) using the appropriate spawner
-    # Usage: Called by click handlers to add agents to the canvas and data structures
     def spawn_agent(name, agent_type, x=None, y=None):
         nonlocal spawn_point, tracker, target_point, target_n, test_grid, current_map
         if x is not None and y is not None:
@@ -341,11 +361,6 @@ def run_gui(UUVModel, map, Grid):
         "Target": lambda: TargetSpawner(canvas, test_grid, current_map, uuv_info_label, target_info_label, spawn_point, tracker, target_point, target_n),
     }
 
-    # Replace all tracker, target_n, spawn_point, target_point usages with the new list-based versions
-    # For example, tracker becomes tracker[0], target_n becomes target_n[0], target_point becomes target_point[0]
-    # ...existing code...
-
-    # Handles the simulation start/stop logic, initializes the model, and starts animation
     def on_start_click():
         nonlocal is_running, animation_job, model_test, test_grid
         disable_spawn_mode()
@@ -380,7 +395,6 @@ def run_gui(UUVModel, map, Grid):
             is_running = False
             canvas.bind("<Button-1>", handle_click)
 
-    # Animation loop for stepping the simulation model and updating the GUI
     def animate():
         nonlocal animation_job
         if is_running and model_test is not None:
@@ -392,11 +406,10 @@ def run_gui(UUVModel, map, Grid):
     selected_option = tk.StringVar()
     selected_option.set("uuv")
 
-    # Sets the selected agent spawn mode (for overlay panels)
     def set_spawn_mode(mode):
         selected_option.set(mode)
 
-    # Opens a file dialog to select a shapefile and loads the map
+    file_path = None
     def select_file():
         nonlocal file_path
         file_path = fd.askopenfilename(title="Selct a shapfile",
@@ -409,7 +422,6 @@ def run_gui(UUVModel, map, Grid):
         else:
             print("no file selected")
 
-    # Checks if a click event occurred inside the map area on the canvas
     def check_inside_map(event):
         overlapping_items = canvas.find_overlapping(event.x, event.y, event.x, event.y)
         is_inside_tag = False
@@ -420,8 +432,6 @@ def run_gui(UUVModel, map, Grid):
                 break
         return is_inside_tag
 
-    # Handles left-click events for spawning agents via overlay panels
-    # Usage: Only active when spawn_mode_enabled is True
     def handle_click(event):
         nonlocal spawn_point, tracker, target_n, target_point, selected_option, test_grid
         if not spawn_mode_enabled[0]:
@@ -464,11 +474,9 @@ def run_gui(UUVModel, map, Grid):
                     lat, lon = current_map.canvas_to_latlon(target_point[0], target_point[1])
                     target_info_label.config(text=f"Target: [{lat:.3f}, {lon:.3f}]")
 
-    # Shows depth information at the clicked canvas location (right-click)
     def show_depth(event):
         current_map.depth_loc(event.x, event.y)
 
-    # Updates the coordinate label and highlights the grid cell under the mouse
     def update_hover_info(event):
         nonlocal test_grid, current_map
         if 'test_grid' in locals() or 'test_grid' in globals():
@@ -487,32 +495,48 @@ def run_gui(UUVModel, map, Grid):
             y2 = y1 + grid_size
             canvas.create_rectangle(x1, y1, x2, y2, outline="white", width=2, tags="hover_rect")
 
-    # Creates the map from a shapefile and initializes the grid
-    def create_map(shape_path):
-        shallow_color = (170, 201, 250)
-        deep_color = (0, 0, 26)
-        nonlocal current_map
-        current_map = map.MapControl(
-            shape_path=shape_path,
-            canvas=canvas,
-            shallow_color=shallow_color,
-            deep_color=deep_color
-        )
-        create_grid()
-        canvas.config(background="#0A7005")
-        canvas.unbind("<Button-1>")
-    def animate():
-        nonlocal animation_job
-        if is_running and model_test is not None:
-            model_test.step()
-            animation_job = root.after(50, animate)
-        else:
-            animation_job = None
-    def create_grid():
-        nonlocal test_grid
-        test_grid = Grid(width=canvas_width, height=canvas_height, cells_n=50, canvas=canvas)
-    test_grid = None
-    root.mainloop()
+    canvas.bind("<Button-1>", handle_click)
+    canvas.bind("<Button-3>", show_depth)
+    canvas.bind("<Motion>", update_hover_info)
+
+    file_section = tk.Frame(sim_menu, bd=2, relief="solid", padx=5, pady=5, width=440, height=90)
+    file_section.pack(side="top", pady=8, anchor="sw")
+    file_section.pack_propagate(False)
+    file_title = tk.Label(file_section, text="Map Selection", font=("Arial", 13, "bold"))
+    file_title.pack(side="top", fill="x", pady=(0, 2))
+    file_bar = tk.Frame(file_section, bg="black", height=2)
+    file_bar.pack(side="top", fill="x", pady=(0, 8))
+    model_section = tk.Frame(sim_menu, bd=2, relief="solid", padx=5, pady=5, width=440, height=150)
+    model_section.pack(side="top", pady=8, anchor="sw")
+    model_section.pack_propagate(False)
+    model_title = tk.Label(model_section, text="Agent Selection", font=("Arial", 13, "bold"))
+    model_title.pack(side="top", fill="x", pady=(0, 2))
+    model_bar = tk.Frame(model_section, bg="black", height=2)
+    model_bar.pack(side="top", fill="x", pady=(0, 8))
+    agent_list_frame = tk.Frame(model_section, bd=2, relief="solid", padx=6, pady=6)
+    agent_list_frame.pack(side="top", fill="x", padx=9, pady=8)
+    header_name = tk.Label(agent_list_frame, text="Name", font=("Arial", 11, "bold"), borderwidth=1, relief="solid", width=10)
+    header_type = tk.Label(agent_list_frame, text="Type", font=("Arial", 11, "bold"), borderwidth=1, relief="solid", width=10)
+    header_num = tk.Label(agent_list_frame, text="#", font=("Arial", 11, "bold"), borderwidth=1, relief="solid", width=8)
+    header_name.grid(row=0, column=0, sticky="nsew")
+    header_type.grid(row=0, column=1, sticky="nsew")
+    header_num.grid(row=0, column=2, sticky="nsew")
+    example_name = tk.Label(agent_list_frame, text="UUV", font=("Arial", 11), borderwidth=1, relief="solid", width=10)
+    example_type = tk.Label(agent_list_frame, text="Seeker", font=("Arial", 11), borderwidth=1, relief="solid", width=10)
+    example_num = tk.Label(agent_list_frame, text="5", font=("Arial", 11), borderwidth=1, relief="solid", width=8)
+    example_name.grid(row=1, column=0, sticky="nsew")
+    example_type.grid(row=1, column=1, sticky="nsew")
+    example_num.grid(row=1, column=2, sticky="nsew")
+    def update_agent_list(agent_data):
+        for widget in agent_list_frame.winfo_children():
+            if widget.grid_info()["row"] != 0:
+                widget.destroy()
+        for i, agent in enumerate(agent_data, start=1):
+            tk.Label(agent_list_frame, text=agent["name"], font=("Arial", 11), borderwidth=1, relief="solid", width=16).grid(row=i, column=0, sticky="nsew")
+            tk.Label(agent_list_frame, text=agent["type"], font=("Arial", 11), borderwidth=1, relief="solid", width=16).grid(row=i, column=1, sticky="nsew")
+            tk.Label(agent_list_frame, text=str(agent["num"]), font=("Arial", 11), borderwidth=1, relief="solid", width=8).grid(row=i, column=2, sticky="nsew")
+    sim_options = tk.Frame(sim_menu, bd=2, relief="solid", padx=5, pady=5, width=440, height=150)
+    sim_options.pack(side="top", pady=8, anchor="sw")  
     sim_options.pack_propagate(False)
     sim_options_title = tk.Label(sim_options, text="Simulation Options", font=("Arial", 13, "bold"))
     sim_options_title.pack(side="top", fill="x", pady=(0, 2))
