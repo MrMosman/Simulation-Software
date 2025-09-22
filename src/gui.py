@@ -9,6 +9,105 @@ import os
 from PIL import Image
 from PIL import ImageTk 
 
+# ---------------------------------------------------------------------------------
+# How to Make a New Agent Spawnable via the Agent Panel (Step-by-Step Guide)
+#
+# 1. Create a New Spawner Class:
+#    - Subclass AgentSpawner (see SeekerSpawner/TargetSpawner for examples).
+#    - Implement the spawn(self, name, x, y) method with your custom logic.
+#
+# 2. Register Your Spawner:
+#    - Add your spawner to the spawner_registry dictionary:
+#      Example:
+#      spawner_registry = {
+#          "Seeker": lambda: SeekerSpawner(...),
+#          "Target": lambda: TargetSpawner(...),
+#          "MyAgent": lambda: MyAgentSpawner(...),  # <-- Add this line
+#      }
+#
+# 3. Add to Agent Panel Dropdown:
+#    - In show_agent_panel(), update the update_dropdown() function to include your agent type:
+#      Example:
+#      if mode_var.get() == "Attacker":
+#          options = ["Seeker", "MyAgent"]  # <-- Add your agent here
+#
+# 4. Done!
+#    - Your new agent type will now appear in the agent panel and can be spawned via the GUI.
+#
+# Note: If your agent is a "Defender", add it to the Defender options instead.
+# ---------------------------------------------------------------------------------
+
+# --- Agent Spawner Classes ---
+class AgentSpawner:
+    def __init__(self, canvas, test_grid, current_map, uuv_info_label, target_info_label, spawn_point, tracker, target_point, target_n):
+        self.canvas = canvas
+        self.test_grid = test_grid
+        self.current_map = current_map
+        self.uuv_info_label = uuv_info_label
+        self.target_info_label = target_info_label
+        self.spawn_point = spawn_point
+        self.tracker = tracker
+        self.target_point = target_point
+        self.target_n = target_n
+
+    def snap_to_grid(self, x, y):
+        if self.test_grid is not None:
+            grid_size = self.test_grid.cell_size
+            snapped_x = round(x / grid_size) * grid_size
+            snapped_y = round(y / grid_size) * grid_size
+            grid_x = int(round(snapped_x / grid_size))
+            grid_y = int(round(snapped_y / grid_size))
+        else:
+            snapped_x, snapped_y = x, y
+            grid_x, grid_y = int(x), int(y)
+        return snapped_x, snapped_y, grid_x, grid_y
+
+    def is_inside_map(self, x, y):
+        overlapping_items = self.canvas.find_overlapping(x, y, x, y)
+        for item_id in overlapping_items:
+            tags = self.canvas.gettags(item_id)
+            if "map" in tags:
+                return True
+        return False
+
+    def spawn(self, name, x, y):
+        raise NotImplementedError
+
+class SeekerSpawner(AgentSpawner):
+    def spawn(self, name, x, y):
+        if not self.is_inside_map(x, y):
+            print("Click not inside map area.")
+            return
+        if self.tracker[0] < 5:
+            snapped_x, snapped_y, grid_x, grid_y = self.snap_to_grid(x, y)
+            start = self.canvas.create_oval(snapped_x-5, snapped_y-5, snapped_x+5, snapped_y+5, fill="red", tags="agent")
+            self.canvas.lift(start)
+            self.tracker[0] += 1
+            tmp_spw = [grid_y, grid_x]
+            self.spawn_point.append(tmp_spw)
+            uuvs_text = f"UUVs: {self.tracker[0]}   "
+            uuvs_list = []
+            for idx, spw in enumerate(self.spawn_point):
+                lat, lon = self.current_map.canvas_to_latlon(spw[0], spw[1])
+                uuvs_list.append(f"{idx+1}: [{lat:.3f}, {lon:.3f}]")
+            lines = [", ".join(uuvs_list[i:i+3]) for i in range(0, len(uuvs_list), 3)]
+            uuvs_text += "\n".join(lines)
+            self.uuv_info_label.config(text=uuvs_text)
+
+class TargetSpawner(AgentSpawner):
+    def spawn(self, name, x, y):
+        if not self.is_inside_map(x, y):
+            print("Click not inside map area.")
+            return
+        if self.target_n[0] < 1:
+            snapped_x, snapped_y, grid_x, grid_y = self.snap_to_grid(x, y)
+            target = self.canvas.create_oval(snapped_x-5, snapped_y-5, snapped_x+5, snapped_y+5, fill="blue", tags="target")
+            self.canvas.lift(target)
+            self.target_n[0] = 1
+            self.target_point[0] = [grid_y, grid_x]
+            lat, lon = self.current_map.canvas_to_latlon(grid_y, grid_x)
+            self.target_info_label.config(text=f"Target: [{lat:.3f}, {lon:.3f}]")
+
 def run_gui(UUVModel, map, Grid):
     # For navigating the project
     CURRENT_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -55,7 +154,7 @@ def run_gui(UUVModel, map, Grid):
     coord_label.pack(fill="x", padx=10, pady=2)
 
     canvas_frame = tk.Frame(root, background='#333333', width=700, height=700, relief="raised", border=5)
-    canvas_frame.pack(side='top',  padx=5, pady=5)
+    canvas_frame.pack(side='left',  padx=5, pady=5)
     canvas_frame.pack_propagate(False)  # Prevent frame from resizing to fit canvas
 
     canvas_width = 700  # Keep this fixed
@@ -69,9 +168,28 @@ def run_gui(UUVModel, map, Grid):
         pass
     canvas.bind("<Motion>", update_mouse_position)
 
-    # Add a global to track simulation state
+    # Define variables at the top level of run_gui so they can be used with nonlocal
+    model_test = None
     is_running = False
     animation_job = None
+    tracker = [0]
+    target_n = [0]
+    spawn_point = []
+    target_point = [None]
+    test_grid = None
+    current_map = None
+    file_path = None
+
+    # Add a flag to control spawn mode
+    spawn_mode_enabled = [False]
+
+    def enable_spawn_mode():
+        spawn_mode_enabled[0] = True
+        canvas.bind("<Button-1>", handle_click)
+
+    def disable_spawn_mode():
+        spawn_mode_enabled[0] = False
+        canvas.unbind("<Button-1>")
 
     # ------ Reset Function ---------
     def reset_simulation():
@@ -81,9 +199,9 @@ def run_gui(UUVModel, map, Grid):
             if "agent" in tags or "target" in tags or canvas.itemcget(item, "fill") in ["orange", "blue"]:
                 canvas.delete(item)
         spawn_point = []
-        tracker = 0
-        target_n = 0
-        target_point = None
+        tracker = [0]
+        target_n = [0]
+        target_point = [None]
         model_test = None
         if animation_job:
             root.after_cancel(animation_job)
@@ -94,6 +212,7 @@ def run_gui(UUVModel, map, Grid):
         coord_label.config(text="Grid Position: (x, y) | [lat, lon]")
         start_btn.config(state="normal", bg="#333333", text="▶ Start", fg="white", command=on_start_click)
         canvas_frame.config(bg="#333333")
+        disable_spawn_mode()
         canvas.bind("<Button-1>", handle_click)
 
     def show_spawn_panel_attacker():
@@ -169,6 +288,7 @@ def run_gui(UUVModel, map, Grid):
             spawning_state.set(True)
             spawn_btn.config(text="Spawning", state="disabled")
             stop_btn.config(state="normal")
+            # Only allow spawning of the selected type from the dropdown
             def place_agent(event):
                 if spawning_state.get():
                     spawn_agent(name_entry.get(), type_var.get(), event.x, event.y)
@@ -223,65 +343,27 @@ def run_gui(UUVModel, map, Grid):
     def spawn_agent(name, agent_type, x=None, y=None):
         nonlocal spawn_point, tracker, target_point, target_n, test_grid, current_map
         if x is not None and y is not None:
-            class DummyEvent:
-                def __init__(self, x, y):
-                    self.x = x
-                    self.y = y
-            event = DummyEvent(x, y)
-            is_inside_tag = False
-            overlapping_items = canvas.find_overlapping(x, y, x, y)
-            for item_id in overlapping_items:
-                tags = canvas.gettags(item_id)
-                if "map" in tags:
-                    is_inside_tag = True
-                    break
-            if not is_inside_tag:
-                print("Click not inside map area.")
-                return
-            if 'test_grid' in locals() or 'test_grid' in globals():
-                grid_size = test_grid.cell_size
-                snapped_x = round(x / grid_size) * grid_size
-                snapped_y = round(y / grid_size) * grid_size
-                grid_x = int(round(snapped_x / grid_size))
-                grid_y = int(round(snapped_y / grid_size))
-            else:
-                snapped_x = x
-                snapped_y = y
-                grid_x = int(x)
-                grid_y = int(y)
-            if agent_type == "Seeker":
-                if tracker < 5:
-                    start = canvas.create_oval(snapped_x-5, snapped_y-5, snapped_x+5, snapped_y+5, fill="red", tags="agent")
-                    canvas.lift(start)
-                    tracker += 1
-                    tmp_spw = [grid_y, grid_x]
-                    spawn_point.append(tmp_spw)
-                    uuvs_text = f"UUVs: {tracker}   "
-                    uuvs_list = []
-                    for idx, spw in enumerate(spawn_point):
-                        lat, lon = current_map.canvas_to_latlon(spw[0], spw[1])
-                        uuvs_list.append(f"{idx+1}: [{lat:.3f}, {lon:.3f}]")
-                    lines = [", ".join(uuvs_list[i:i+3]) for i in range(0, len(uuvs_list), 3)]
-                    uuvs_text += "\n".join(lines)
-                    uuv_info_label.config(text=uuvs_text)
-            elif agent_type == "Target":
-                if target_n < 1:
-                    target = canvas.create_oval(snapped_x-5, snapped_y-5, snapped_x+5, snapped_y+5, fill="blue", tags="target")
-                    canvas.lift(target)
-                    target_n = 1
-                    target_point = [grid_y, grid_x]
-                    lat, lon = current_map.canvas_to_latlon(target_point[0], target_point[1])
-                    target_info_label.config(text=f"Target: [{lat:.3f}, {lon:.3f}]")
+            if agent_type in spawner_registry:
+                # Always get a fresh spawner with current references
+                spawner = spawner_registry[agent_type]()
+                spawner.spawn(name, x, y)
             else:
                 print(f"Unknown agent type: {agent_type}")
         else:
             print(f"Ready to spawn {agent_type} named '{name}' (waiting for click)")
 
     spawn_point = []
-    target_point = None
+    target_point = [None]
+
+    # --- Agent Spawner Registry ---
+    spawner_registry = {
+        "Seeker": lambda: SeekerSpawner(canvas, test_grid, current_map, uuv_info_label, target_info_label, spawn_point, tracker, target_point, target_n),
+        "Target": lambda: TargetSpawner(canvas, test_grid, current_map, uuv_info_label, target_info_label, spawn_point, tracker, target_point, target_n),
+    }
 
     def on_start_click():
         nonlocal is_running, animation_job, model_test, test_grid
+        disable_spawn_mode()
         if not is_running:
             canvas.unbind("<Button-1>")
             start_btn.config(state="normal", bg="#333333", text="⏸ Running...", fg="white", command=on_start_click) 
@@ -290,11 +372,15 @@ def run_gui(UUVModel, map, Grid):
                     tk.messagebox.showerror("Error", "Please load a map before starting the simulation.")
                     start_btn.config(state="normal", bg="#333333", text="▶ Start", fg="white", command=on_start_click)
                     return
+                if target_point[0] is None:
+                    tk.messagebox.showerror("Error", "Please spawn a target before starting the simulation.")
+                    start_btn.config(state="normal", bg="#333333", text="▶ Start", fg="white", command=on_start_click)
+                    return
                 model_test = UUVModel(
-                    n=tracker,
+                    n=tracker[0],
                     canvas=canvas,
-                    spawns=spawn_point,
-                    targets=target_point,
+                    spawns=spawn_point.copy(),
+                    targets=target_point[0],
                     map=current_map,
                     grid=test_grid.grid
                 )
@@ -323,12 +409,6 @@ def run_gui(UUVModel, map, Grid):
     def set_spawn_mode(mode):
         selected_option.set(mode)
 
-    tracker = 0
-    target_n = 0
-    spawn_point = []
-    target_point = None
-    model_test = None
-
     file_path = None
     def select_file():
         nonlocal file_path
@@ -352,10 +432,10 @@ def run_gui(UUVModel, map, Grid):
                 break
         return is_inside_tag
 
-    tracker = 0
-    target_n = 0
     def handle_click(event):
         nonlocal spawn_point, tracker, target_n, target_point, selected_option, test_grid
+        if not spawn_mode_enabled[0]:
+            return
         is_inside_tag = check_inside_map(event=event)
         if is_inside_tag == True:
             if 'test_grid' in locals() or 'test_grid' in globals():
@@ -369,14 +449,15 @@ def run_gui(UUVModel, map, Grid):
                 snapped_y = event.y
                 grid_x = int(event.x)
                 grid_y = int(event.y)
-            if selected_option.get() == "uuv":
-                if tracker != 5:
+            agent_type = selected_option.get()
+            if agent_type == "uuv":
+                if tracker[0] != 5:
                     start = canvas.create_oval(snapped_x-5, snapped_y-5, snapped_x + 5, snapped_y +5, fill="red", tags="agent")
                     canvas.lift(start)
-                    tracker += 1
+                    tracker[0] += 1
                     tmp_spw = [grid_y, grid_x]
                     spawn_point.append(tmp_spw)
-                    uuvs_text = f"UUVs: {tracker}   "
+                    uuvs_text = f"UUVs: {tracker[0]}   "
                     uuvs_list = []
                     for idx, spw in enumerate(spawn_point):
                         lat, lon = current_map.canvas_to_latlon(spw[0], spw[1])
@@ -384,12 +465,12 @@ def run_gui(UUVModel, map, Grid):
                     lines = [", ".join(uuvs_list[i:i+3]) for i in range(0, len(uuvs_list), 3)]
                     uuvs_text += "\n".join(lines)
                     uuv_info_label.config(text=uuvs_text)
-            elif selected_option.get() == "target":
-                if target_n != 1:
+            elif agent_type == "target":
+                if target_n[0] != 1:
                     target = canvas.create_oval(snapped_x-5, snapped_y-5, snapped_x+5, snapped_y+5, fill="blue", tags="target")
                     canvas.lift(target)
-                    target_n = 1
-                    target_point = [grid_y, grid_x]
+                    target_n[0] = 1
+                    target_point[0] = [grid_y, grid_x]
                     lat, lon = current_map.canvas_to_latlon(target_point[0], target_point[1])
                     target_info_label.config(text=f"Target: [{lat:.3f}, {lon:.3f}]")
 
