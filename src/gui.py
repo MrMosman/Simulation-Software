@@ -584,7 +584,7 @@ def run_gui(UUVModel, map, Grid):
     sim_options_bar = tk.Frame(sim_options, bg="black", height=2)
     sim_options_bar.pack(side="top", fill="x", pady=(0, 8))
     sim_options_btn_frame = tk.Frame(sim_options)
-    # sim_options_btn_frame.pack(expand=True)
+    sim_options_btn_frame.pack(expand=True)
     file_button = tk.Button(
         file_section,
         text="Select",

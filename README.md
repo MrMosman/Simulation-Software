@@ -1,5 +1,9 @@
 # University of Massachusetts Dartmouth UUV SIM
 
+### 9/24/25
+* Updated a new gui script to handles classes
+* cleaned up some code redundancies
+
 ### 9/3/25
 * fixed the map to hanlde Multipolygon
 

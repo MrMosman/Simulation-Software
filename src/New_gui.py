@@ -18,10 +18,12 @@ class App(tk.Tk):
 
         # varibles
         self.map_file_path = None
+        self.map_grid = None
         self.map_shallow_color = (170, 201, 250)
         self.map_deep_color = (0, 0, 26)
-        self.map_grid = None
         self.canvas_size = (700, 700)
+        self.is_running = False
+        self.animation_job = None
 
 
         # logo
