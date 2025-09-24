@@ -81,11 +81,11 @@ class UUVAgent(mesa.Agent):
                     return [0, 0]
                 tmp = self.path[0]
                 self.next_target = self.grid[tmp[0]][tmp[1]]
-                print(f'next target: {self.next_target}')
+                # print(f'next target: {self.next_target}')
                 unit_vector = [0, 0]
         else:
             unit_vector = new_vector / magnitude
-        print(f'unitvector{unit_vector}')
+        # print(f'unitvector{unit_vector}')
         return unit_vector
         
     def move_to_target(self):
@@ -94,30 +94,31 @@ class UUVAgent(mesa.Agent):
         if (self.position[0] != self.target[0]) or (self.position[1] != self.target[1]):
             new_x = np.round(new_direction[0]).astype(int)
             new_y = np.round(new_direction[1]).astype(int)
-            print(f'new_x:{new_x}')
-            print(f'new_y:{new_y}')
+            # print(f'new_x:{new_x}')
+            # print(f'new_y:{new_y}')
             self.position = np.array([self.position[0] + new_x, self.position[1]+new_y])
             self.canvas.move(self.oval, new_x, new_y)     
             self.canvas.itemconfig(self.oval, fill="red")  # Change color to red while moving
   
 
-            nearest_salinity_point = self.salinity.find_nearest_point(self.position)
-            if nearest_salinity_point:
-                top_salinity = nearest_salinity_point["top_salinity"]
-                bottom_salinity = nearest_salinity_point["bottom_salinity"]
-                print(f"Agent at position {self.position} is near salinity point {nearest_salinity_point['coordinates']}")
-                print(f"Top Salinity in ppt: {top_salinity}, Bottom Salinity in ppt: {bottom_salinity}")
-            else:
-                print(f"No salinity data found for agent at position {self.position}")     
+            # # new saltiny stuff
+            # nearest_salinity_point = self.salinity.find_nearest_point(self.position)
+            # if nearest_salinity_point:
+            #     top_salinity = nearest_salinity_point["top_salinity"]
+            #     bottom_salinity = nearest_salinity_point["bottom_salinity"]
+            #     print(f"Agent at position {self.position} is near salinity point {nearest_salinity_point['coordinates']}")
+            #     print(f"Top Salinity in ppt: {top_salinity}, Bottom Salinity in ppt: {bottom_salinity}")
+            # else:
+            #     print(f"No salinity data found for agent at position {self.position}")     
 
-            nearest_temp_point = self.temp.find_nearest_point(self.position) #Find nearest termperature point
-            if nearest_temp_point:
-                top_temp = nearest_temp_point["top_temp"]
-                bottom_temp = nearest_temp_point["bottom_temp"]
-                print(f"Agent at position {self.position} is near temp point {nearest_temp_point['coordinates']}")
-                print(f"Top temp in C: {top_temp}, Bottom temp in C: {bottom_temp}")
-            else:
-                print(f"No temp data found for agent at position {self.position}")   
+            # nearest_temp_point = self.temp.find_nearest_point(self.position) #Find nearest termperature point
+            # if nearest_temp_point:
+            #     top_temp = nearest_temp_point["top_temp"]
+            #     bottom_temp = nearest_temp_point["bottom_temp"]
+            #     print(f"Agent at position {self.position} is near temp point {nearest_temp_point['coordinates']}")
+            #     print(f"Top temp in C: {top_temp}, Bottom temp in C: {bottom_temp}")
+            # else:
+            #     print(f"No temp data found for agent at position {self.position}")   
   
 
     def a_star_search(self):
@@ -229,9 +230,9 @@ class UUVAgent(mesa.Agent):
         self.path = path
 
         # Print the path
-        for i in path:
-            print("->", i, end=" ")
-        print()
+        # for i in path:
+        #     print("->", i, end=" ")
+        # print()
 
     def is_valid(self, row, col):
         """Check if a cell is valid"""

@@ -5,12 +5,13 @@ import mesa
 
 
 
-from . import agent
+from . import agent, detector_agent
+
 
 class UUVModel(mesa.Model):
     """UUV model testing class"""
     
-    def __init__(self, n, spawns, map, targets, canvas, grid, *args, seed = None, rng = None, **kwargs):
+    def __init__(self, n, spawns, map, targets, canvas, grid, detector_spawn, detector_n,*args, seed = None, rng = None, **kwargs):
         super().__init__(*args, seed=seed, rng=rng, **kwargs)
         self.num_agents = n
         self.canvas = canvas
@@ -21,11 +22,21 @@ class UUVModel(mesa.Model):
         # Grid stuff
         self.grid = grid
 
+        # testing new agent
+        self.detector_n = detector_n
+        self.detector_spawn = detector_spawn
+
 
         #create agents
         for _ in range(self.num_agents):
             tmp_spwn = self.spawns[_]
             agent.UUVAgent.create_agents(model=self, n=1, target=self.targets, spawn=tmp_spwn, canvas=self.canvas, map=self.map, grid=self.grid)
+
+        print("is to make sensors")
+        for _ in range(self.detector_n):
+            tmp_spwn = self.detector_spawn[_]
+            print(f'tmp spawn{tmp_spwn}')
+            detector_agent.DetectorAgent.create_agents(model=self, n=1, spawns=tmp_spwn, canvas=self.canvas, map=self.map, grid=self.grid)
 
     def step(self):
         """advance model by one step"""

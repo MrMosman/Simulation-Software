@@ -97,7 +97,6 @@ class MapControl():
 
         shape_path = shp_path
         self.shp = gpd.read_file(shape_path)
-        print(self.shp)
         self.min_depth = self.shp['DRVAL2'].min()
         self.max_depth = self.shp['DRVAL2'].max()
         minx, miny, maxx, maxy = self.shp.total_bounds
@@ -121,7 +120,6 @@ class MapControl():
             geometry = row['geometry']
             depth1 = row["DRVAL1"]
             depth2 = row["DRVAL2"]   
-            print(geometry.geom_type)
             # Check if the geometry is a Polygon
             if geometry.geom_type == 'Polygon':
                 # Get the exterior coordinates
