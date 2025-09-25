@@ -1,5 +1,9 @@
 # University of Massachusetts Dartmouth UUV SIM
 
+### 9/25/25
+* moved more of the old Gui into the proper class
+* figure out what controls what
+
 ### 9/24/25
 * Updated a new gui script to handles classes
 * cleaned up some code redundancies

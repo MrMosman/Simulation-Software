@@ -77,7 +77,6 @@ class AgentSpawner:
     def spawn(self, name, x, y):
         raise NotImplementedError
 
-
 class SeekerSpawner(AgentSpawner):
     """Creates the seeker UAV"""
     def spawn(self, name, x, y):
@@ -388,6 +387,7 @@ def run_gui(UUVModel, map, Grid):
 
     # This is the were the agent model starts
     def on_start_click():
+        '''Start button controles this'''
         nonlocal is_running, animation_job, model_test, test_grid
         disable_spawn_mode()
         if not is_running:
@@ -437,6 +437,8 @@ def run_gui(UUVModel, map, Grid):
 
     def set_spawn_mode(mode):
         selected_option.set(mode)
+
+
 
     file_path = None
     def select_file():
