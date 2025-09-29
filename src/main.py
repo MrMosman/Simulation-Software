@@ -1,8 +1,7 @@
 from agents.model import UUVModel
 import map
 import os
-from grid import Grid
-from gui.New_gui import App
+from New_gui import App
 
 def main():
     # setup globals
