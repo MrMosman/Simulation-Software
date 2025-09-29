@@ -201,8 +201,7 @@ class App(tk.Tk):
         else:
             self.mode_var.set("Attacker")
         self.update_dropdown()
-
-    
+  
     def start_spawning(self):
         '''WORK IN PROGRESS'''
         self.spawning_state.set(True)
@@ -269,6 +268,14 @@ class GeneralFrames(tk.Frame):
             self.title.pack(side='top', pady=(0, 2))
             self.file_bar = tk.Frame(self, bg="black", height=2)
             self.file_bar.pack(side="top", fill="x", pady=(0, 8))
+
+class UAVSelectWindow(tk.Toplevel):
+    '''UAV selecting popup window'''
+    def __init__(self, title, size):
+        self.title=title
+        self.geometry(f'{self.size[0]}x{self.size[1]}')
+        self.attributes('-topmost', True)
+
 
 
 CURRENT_PATH = os.path.dirname(os.path.abspath(__file__))
