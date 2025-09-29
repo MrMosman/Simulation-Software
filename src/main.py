@@ -1,10 +1,14 @@
 from agents.model import UUVModel
 import map
+import os
 from grid import Grid
-from gui import run_gui
+from gui.New_gui import App
 
 def main():
-    run_gui(UUVModel, map, Grid)
+    # setup globals
+    CURRENT_PATH = os.path.dirname(os.path.abspath(__file__))
+    PARENT_DIR = os.path.dirname(CURRENT_PATH)
+    app = App('simulation', (1100,600), PARENT_DIR)
 
 if __name__ == "__main__":
     main()

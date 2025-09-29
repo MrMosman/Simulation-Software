@@ -36,6 +36,7 @@ class App(tk.Tk):
         self.menu = Menu(parent=self, size=(300, self.app_height),color='white')
         self.file_menu = FileMenu(self, (self.app_width, 100), color='white')
         self.canvas_frame = CanvasFrame(self, self.canvas_size)
+        self.popup_window = None
 
         # sub-menus
         self.file_section = GeneralFrames(parent=self.menu, size=(440, 90), side='top', text='Map Selction')
@@ -46,7 +47,7 @@ class App(tk.Tk):
 
         #sub-menu buttons
         self.file_button = tk.Button(self.file_section, text="Select", command=self.select_file, bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised")
-        self.agent_menu_button = tk.Button(self.agent_menu_section, text="Add Agent", command=self.show_agent_panel, bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised")
+        self.agent_menu_button = tk.Button(self.agent_menu_section, text="Add Agent", command=self.create_popup, bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised")
         self.start_button = tk.Button(self.sub_sim_section, text="▶ Start", command=self.on_start_click, bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised")
         self.reset_sim_button = tk.Button(self.sub_sim_section, text="Reset", command= lambda: self.reset_simulation(), bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised")
         self.exit_sim_button = tk.Button(self.sub_sim_section, text="Exit", command=self.destroy, bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised")
@@ -137,91 +138,10 @@ class App(tk.Tk):
         else:
             self.animation_job = None
 
-    def show_agent_panel(self):
-        '''WORK IN PROGRESS'''
-        # create the new window
-        self.agent_window = tk.Toplevel(self)
-        self.agent_window.title("Add Agent")
-        self.agent_window.geometry("400x300")
-        self.agent_window.resizable(False, False)
-
-        self.mode_var = tk.StringVar(self.agent_window)
-        self.mode_var.set("Attacker")
-        self.name_label = tk.Label(self.agent_window, text="Name:", font=("Arial", 11))
-        self.name_label.pack(anchor="w", padx=20, pady=(20, 2))
-        self.name_entry = tk.Entry(self.agent_window, font=("Arial", 11), width=25)
-        self.name_entry.pack(anchor="w", padx=20, pady=(0, 10))
-        self.type_label = tk.Label(self.agent_window, text="Type:", font=("Arial", 11))
-        self.type_label.pack(anchor="w", padx=20, pady=(0, 2))
-        self.type_row = tk.Frame(self.agent_window)
-        self.type_row.pack(anchor="w", padx=20, pady=(0, 10), fill="x")
-        self.type_var = tk.StringVar(self.agent_window)
-        self.type_dropdown = tk.OptionMenu(self.type_row, self.type_var, "Seeker")
-        self.type_dropdown.config(font=("Arial", 11), width=18)
-        self.type_dropdown.pack(side="left")
-
-        self.btn_left = tk.Frame(self.agent_window)
-        self.btn_left.pack(side="left", anchor="sw", padx=20, pady=15)
-        self.btn_right = tk.Frame(self.agent_window)
-        self.btn_right.pack(side="right", anchor="se", padx=20, pady=15)
-        self.spawn_btn = tk.Button(self.btn_left,text="Spawn",bg="#333333",fg="white",width=12,height=1,font=("Arial", 12),relief="raised",command=self.start_spawning)
-        self.spawn_btn.pack(fill="x")
-        self.stop_btn = tk.Button(self.btn_left,text="Stop Spawning",bg="#333333",fg="white",width=12,height=1,font=("Arial", 12),relief="raised",command=self.stop_spawning,state="disabled")
-        self.stop_btn.pack(fill="x", pady=(8, 0))
-        self.close_btn = tk.Button(self.btn_right,text="Close",bg="#333333",fg="white",width=10,height=1,font=("Arial", 12),relief="raised",command=lambda: [self.stop_spawning(), self.agent_window.destroy()])
-        self.close_btn.pack(anchor="e")
-        
-        self.toggle_btn = tk.Button(self.type_row, textvariable=self.mode_var, font=("Arial", 12), width=10, relief="raised", command=self.toggle_mode)
-        self.toggle_btn.pack(side="left", padx=(12, 0), pady=(0, 2))
-        self.update_dropdown()
-        self.spawning_state = tk.BooleanVar(self.agent_window)
-        self.spawning_state.set(False)
-
-    def update_dropdown(self):
-        '''WORK IN PROGRESS'''
-        self.menu = self.type_dropdown["menu"]
-        self.menu.delete(0, "end")
-        if self.mode_var.get() == "Attacker":
-            self.options = ["Seeker", "Detector"]
-        else:
-            self.options = ["Target"]
-
-        for opt in self.options:
-            self.menu.add_command(label=opt, command=lambda value=opt: self.type_var.set(value))
-        self.type_var.set(self.options[0])
-        if self.mode_var.get() == "Attacker":
-            self.toggle_btn.config(bg="#8B0000", fg="white")
-        else:
-            self.toggle_btn.config(bg="#00008B", fg="white")
-
-    def toggle_mode(self):
-        '''WORK IN PROGRESS'''
-        if self.mode_var.get() == "Attacker":
-            self.mode_var.set("Defender")
-        else:
-            self.mode_var.set("Attacker")
-        self.update_dropdown()
-  
-    def start_spawning(self):
-        '''WORK IN PROGRESS'''
-        self.spawning_state.set(True)
-        self.spawn_btn.config(text="Spawning", state="disabled")
-        self.start_button.config(state="normal")
-        # Only allow spawning of the selected type from the dropdown
-        self.canvas.bind("<Button-1>", self.place_agent)
-
-    def place_agent(self, event):
-        '''WORK IN PROGRESS'''
-        if self.spawning_state.get():
-            self.spawn_agent(self.name_entry.get(), self.type_var.get(), event.x, event.y)
-
-    def stop_spawning(self):
-        '''WORK IN PROGRESS'''
-        self.spawning_state.set(False)
-        self.spawn_btn.config(text="Spawn", state="normal")
-        self.stop_btn.config(state="disabled")
-        self.canvas.unbind("<Button-1>")
-
+    def create_popup(self):
+        '''create the popup window'''
+        if self.popup_window is None:
+            self.popup_window = UAVSelectWindow(self,"Select UAV", (400,300), self.canvas)
 
 class Menu(tk.Frame):
     """Handles the menu for the UAV Agents"""
@@ -271,13 +191,99 @@ class GeneralFrames(tk.Frame):
 
 class UAVSelectWindow(tk.Toplevel):
     '''UAV selecting popup window'''
-    def __init__(self, title, size):
+    def __init__(self, parent, title, size, canvas):
+        super().__init__(parent)
+        # setup the window 
+        self.parent = parent
         self.title=title
-        self.geometry(f'{self.size[0]}x{self.size[1]}')
+        self.geometry(f'{size[0]}x{size[1]}')
         self.attributes('-topmost', True)
+        self.resizable(False, False)
+        self.canvas = canvas
+        self.protocol("WM_DELETE_WINDOW", self.close_popup)
+
+        self.mode_var = tk.StringVar(self)
+        self.mode_var.set("Attacker")
+        self.name_label = tk.Label(self, text="Name:", font=("Arial", 11))
+        self.name_label.pack(anchor="w", padx=20, pady=(20, 2))
+        self.name_entry = tk.Entry(self, font=("Arial", 11), width=25)
+        self.name_entry.pack(anchor="w", padx=20, pady=(0, 10))
+        self.type_label = tk.Label(self, text="Type:", font=("Arial", 11))
+        self.type_label.pack(anchor="w", padx=20, pady=(0, 2))
+        self.type_row = tk.Frame(self)
+        self.type_row.pack(anchor="w", padx=20, pady=(0, 10), fill="x")
+        self.type_var = tk.StringVar(self)
+        self.type_dropdown = tk.OptionMenu(self.type_row, self.type_var, "Seeker")
+        self.type_dropdown.config(font=("Arial", 11), width=18)
+        self.type_dropdown.pack(side="left")
+
+        self.btn_left = tk.Frame(self)
+        self.btn_left.pack(side="left", anchor="sw", padx=20, pady=15)
+        self.btn_right = tk.Frame(self)
+        self.btn_right.pack(side="right", anchor="se", padx=20, pady=15)
+        self.spawn_btn = tk.Button(self.btn_left,text="Spawn",bg="#333333",fg="white",width=12,height=1,font=("Arial", 12),relief="raised",command=self.start_spawning)
+        self.spawn_btn.pack(fill="x")
+        self.stop_btn = tk.Button(self.btn_left,text="Stop Spawning",bg="#333333",fg="white",width=12,height=1,font=("Arial", 12),relief="raised",command=self.stop_spawning,state="disabled")
+        self.stop_btn.pack(fill="x", pady=(8, 0))
+        self.close_btn = tk.Button(self.btn_right,text="Close",bg="#333333",fg="white",width=10,height=1,font=("Arial", 12),relief="raised",command=self.close_popup)
+        self.close_btn.pack(anchor="e")
+
+        self.toggle_btn = tk.Button(self.type_row, textvariable=self.mode_var, font=("Arial", 12), width=10, relief="raised", command=self.toggle_mode)
+        self.toggle_btn.pack(side="left", padx=(12, 0), pady=(0, 2))
+        self.update_dropdown()
+        self.spawning_state = tk.BooleanVar(self)
+        self.spawning_state.set(False)
+
+    def update_dropdown(self):
+        '''Update the dropdown menu'''
+        self.menu = self.type_dropdown["menu"]
+        self.menu.delete(0, "end")
+        if self.mode_var.get() == "Attacker":
+            self.options = ["Seeker", "Detector"]
+        else:
+            self.options = ["Target"]
+
+        for opt in self.options:
+            self.menu.add_command(label=opt, command=lambda value=opt: self.type_var.set(value))
+        self.type_var.set(self.options[0])
+        if self.mode_var.get() == "Attacker":
+            self.toggle_btn.config(bg="#8B0000", fg="white")
+        else:
+            self.toggle_btn.config(bg="#00008B", fg="white")
+    
+    def toggle_mode(self):
+        '''Toggle between the Attacker and Defender UAVs'''
+        if self.mode_var.get() == "Attacker":
+            self.mode_var.set("Defender")
+        else:
+            self.mode_var.set("Attacker")
+        self.update_dropdown()
+
+    def start_spawning(self):
+        '''Enable spawning'''
+        self.spawning_state.set(True)
+        self.spawn_btn.config(text="Spawning", state="disabled")
+        self.stop_btn.config(state="normal")
+        # Only allow spawning of the selected type from the dropdown
+        self.canvas.bind("<Button-1>", self.place_agent)
+
+    def place_agent(self, event):
+        '''Place agents on the canvas'''
+        if self.spawning_state.get():
+            return NotImplementedError
+            # self.spawn_agent(self.name_entry.get(), self.type_var.get(), event.x, event.y)
+    
+    def stop_spawning(self):
+        '''disable spawning'''
+        self.spawning_state.set(False)
+        self.spawn_btn.config(text="Spawn", state="normal")
+        self.stop_btn.config(state="disabled")
+        self.canvas.unbind("<Button-1>")
+
+    def close_popup(self):
+        self.stop_spawning()
+        self.parent.popup_window = None
+        self.destroy()
+        
 
 
-
-CURRENT_PATH = os.path.dirname(os.path.abspath(__file__))
-PARENT_DIR = os.path.dirname(CURRENT_PATH)
-App('simulation', (1100,600), PARENT_DIR)
