@@ -26,11 +26,18 @@ class App(tk.Tk):
         self.is_running = False
         self.animation_job = None
         self.can_spawn = False
-        # NEED TO UPDATE LATER WITH EASIER METHOD
+
+        # Handle spawn position data
+        # dont change this unless you tell me
+        # or have good reason
+        self.all_agent_types = [
+            agent_type
+            for types_tuple in model.UUVModel.AGENT_CATEGORIES.values()
+            for agent_type in types_tuple                    
+        ]
         self.spawn_data = {
-            'Seeker': [],
-            'Detector': [],
-            'Target': []
+            agent_type : []
+            for agent_type in self.all_agent_types
         }
 
         # Agent model
@@ -124,12 +131,13 @@ class App(tk.Tk):
                     return
                 # addationl parameters here
                 # create the mesa_model here
-                self.mesa_model = {
-                    self.spawn_data,
-                    self.current_map,
-                    self.grid,
-                    self.canvas
-                }
+                self.mesa_model = model.UUVModel(
+                    spawns=self.spawn_data, 
+                    map=self.current_map, 
+                    grid=self.map_grid,
+                    canvas=self.canvas
+                    )
+
             self.is_running = True
             self.animate()
         else:
@@ -270,6 +278,12 @@ class UAVSelectWindow(tk.Toplevel):
         self.canvas = canvas
         self.protocol("WM_DELETE_WINDOW", self.close_popup)
 
+        # gather agent data
+        # dont change this unless you tell me
+        # or have good reason
+        self.agent_type_attacker = model.UUVModel.AGENT_CATEGORIES['attacker']
+        self.agent_type_defender = model.UUVModel.AGENT_CATEGORIES['defender']
+
         # Setup button controles
         self.mode_var = tk.StringVar(self)
         self.mode_var.set("Attacker")
@@ -314,9 +328,9 @@ class UAVSelectWindow(tk.Toplevel):
         self.menu = self.type_dropdown["menu"]
         self.menu.delete(0, "end")
         if self.mode_var.get() == "Attacker":
-            self.options = ["Seeker", "Detector"]
+            self.options = self.agent_type_attacker
         else:
-            self.options = ["Target"]
+            self.options = self.agent_type_defender
 
         for opt in self.options:
             self.menu.add_command(label=opt, command=lambda value=opt: self.selected_agent_type.set(value))

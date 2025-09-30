@@ -12,39 +12,56 @@ from . import agent, detector_agent
 class UUVModel(mesa.Model):
     """UUV model testing class"""
 
+    # needs to be manulay set here so spell correctly
     AGENT_MAP = {
-        "Seeker" : agent.UUVAgent,
-        "Dector" : detector_agent.DetectorAgent
+        "seeker" : agent.UUVAgent,
+        "detector" : detector_agent.DetectorAgent
+    }
+
+    # Univerisal agent types
+    # if add new element must add a comma to end 
+    # ie ('target', 'test', ) <-see how there is a comma after the new 'test' ageent
+    AGENT_CATEGORIES = {
+        "attacker" : ("seeker", "detector"),
+        "defender" : ('target', 'gunner is cool')
     }
     
-    def __init__(self, n, spawns, map, targets, canvas, grid, *args, seed = None, rng = None, **kwargs):
+    def __init__(self, spawns, map, canvas, grid, *args, seed = None, rng = None, **kwargs):
         super().__init__(*args, seed=seed, rng=rng, **kwargs)
         # setup mesa controls
 
         # sim stuff gonna get changed
-        self.num_agents = n
+        # self.num_agents = n
+        # self.targets = targets
         self.canvas = canvas
         self.spawns = spawns
-        self.targets = targets
         self.map = map
+        self.grid = grid
 
-
+        # flatten catagories
+        self.all_agent_types = [
+            agent_type
+            for types_tuple in self.AGENT_CATEGORIES.values() # Get ('Seeker', 'Detector'), ('Target',)
+            for agent_type in types_tuple                    # Flatten the tuples
+        ]
         # set agent populations
         self.population_count = {
-            "Seeker": 0,
-            "Detector": 0,
-            "Targets" : 0
+            agent_type : 0
+            for agent_type in self.all_agent_types
+        }
+        # position tracker
+        self.population_position = {
+            agent_type : []
+            for agent_type in self.all_agent_types
         }
 
-        # position tracker
-        self.population_position = {}
-
-        # Grid stuff
-        self.grid = grid
-        #create agents
-        for _ in range(self.num_agents):
-            tmp_spwn = self.spawns[_]
-            agent.UUVAgent.create_agents(model=self, n=1, target=self.targets, spawn=tmp_spwn, canvas=self.canvas, map=self.map, grid=self.grid)
+        # Prcess the spawn data
+        self.process_spawn_data(spawns=spawns)
+        
+        # #create agents
+        # for _ in range(self.num_agents):
+        #     tmp_spwn = self.spawns[_]
+        #     agent.UUVAgent.create_agents(model=self, n=1, target=self.targets, spawn=tmp_spwn, canvas=self.canvas, map=self.map, grid=self.grid)
 
     def step(self):
         """advance model by one step"""
@@ -54,7 +71,22 @@ class UUVModel(mesa.Model):
         '''Inital Agent registration'''
         # increase population for that agent type
         self.population_count[type_name] += 1
-        self.population_position[pos].append(agent_instance)
+        self.population_position[type_name].append(pos)
+
+    def process_spawn_data(self, spawns):
+        '''Process the raw spawn data from the gui'''
+        # iterate over outer dictionary
+        for agent_category, spawn_list in spawns.items():
+            # iterate inside the dictionary
+            for spawn_data in spawn_list:
+                agent_type = spawn_data.get('type')
+                agent_pos = spawn_data.get('pos')
+                agent_name = spawn_data.get('name')
+                self.agent_registration(agent_instance=agent_category, pos=agent_pos, type_name=agent_name)
+                print(f'{agent_type} and {agent_pos}') #DEBUG
+        # DEBUG 
+        print(self.population_count)
+        print(self.population_position)
 
 
     def create_agent(self, instruction):
