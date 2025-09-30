@@ -5,6 +5,7 @@ from PIL import Image
 from PIL import ImageTk 
 from grid import Grid
 from map import MapControl
+from agents import model
 
 class App(tk.Tk):
     def __init__(self, title, size, parent_dir):
@@ -24,7 +25,16 @@ class App(tk.Tk):
         self.canvas_size = (700, 700)
         self.is_running = False
         self.animation_job = None
+        self.can_spawn = False
+        # NEED TO UPDATE LATER WITH EASIER METHOD
+        self.spawn_data = {
+            'Seeker': [],
+            'Detector': [],
+            'Target': []
+        }
 
+        # Agent model
+        self.mesa_model = None
 
         # logo
         self.logo_path = os.path.join(parent_dir, "resources", "umass_logo.ico")
@@ -71,6 +81,9 @@ class App(tk.Tk):
         # canvas settings
         self.canvas = CanvasMap(self.canvas_frame, (700,700))
 
+        # control bindings
+        self.canvas.bind("<Motion>", self.update_hover_info)
+
         # run
         self.mainloop()
 
@@ -99,20 +112,33 @@ class App(tk.Tk):
         self.canvas.unbind("<Button-1>")
 
     def on_start_click(self):
-        '''WORK IN PROGRESS'''
-        self.disable_spawn_mode()
-        if not is_running:
+        '''Start the simulation and create the mesa_model'''
+        self.can_spawn = False
+        if self.is_running is False:
             self.canvas.unbind("<Button-1>")
             self.start_button.config(state="normal", bg="#333333", text="⏸ Running...", fg="white", command=self.on_start_click) 
-            is_running = True
+            if self.mesa_model is None:
+                if self.map_grid is None:
+                    tk.messagebox.showerror("Error", "Please load a map before starting the simulation.")
+                    self.start_button.config(state="normal", bg="#333333", text="▶ Start", fg="white", command=self.on_start_click)
+                    return
+                # addationl parameters here
+                # create the mesa_model here
+                self.mesa_model = {
+                    self.spawn_data,
+                    self.current_map,
+                    self.grid,
+                    self.canvas
+                }
+            self.is_running = True
             self.animate()
         else:
-            if animation_job:
-                self.after_cancel(animation_job)
-                animation_job = None
+            if self.animation_job:
+                self.after_cancel(self.animation_job)
+                self.animation_job = None
             self.start_button.config(state="normal", bg="#333333", text="▶ Start", fg="white", command=self.on_start_click)
             self.canvas_frame.config(bg="#333333")
-            is_running = False
+            self.is_running = False
     
     def reset_simulation(self):
         '''WORK IN PROGRESS'''
@@ -131,10 +157,10 @@ class App(tk.Tk):
         self.canvas_frame.config(bg="#333333")
 
     def animate(self):
-        '''WORK IN PROGRESS'''
-        if self.is_running and self.model_test is not None:
-            self.model_test.step()
+        '''animate the screen'''
+        if self.is_running and self.mesa_model is not None:
             self.animation_job = self.after(50, self.animate)
+            # step through the model
         else:
             self.animation_job = None
 
@@ -142,6 +168,48 @@ class App(tk.Tk):
         '''create the popup window'''
         if self.popup_window is None:
             self.popup_window = UAVSelectWindow(self,"Select UAV", (400,300), self.canvas)
+
+    def snap_to_grid(self, x, y):
+        '''Snaps the mouse to the grid'''
+        if self.map_grid is not None:
+            grid_size = self.map_grid.cell_size
+            snapped_x = round(x / grid_size) * grid_size
+            snapped_y = round(y / grid_size) * grid_size
+            grid_x = int(round(snapped_x / grid_size))
+            grid_y = int(round(snapped_y / grid_size))
+        else:
+            snapped_x, snapped_y = x, y
+            grid_x, grid_y = int(x), int(y)
+        return snapped_x, snapped_y, grid_x, grid_y
+
+    def is_inside_map(self, x, y):
+        '''checks if inside the canvas bounds'''
+        overlapping_items = self.canvas.find_overlapping(x, y, x, y)
+        for item_id in overlapping_items:
+            tags = self.canvas.gettags(item_id)
+            if "map" in tags:
+                return True
+        return False
+
+    def update_hover_info(self, event):
+        '''updates the hover info and shows the current selected grid'''
+        if self.map_grid is None:
+            return
+        grid_size = self.map_grid.cell_size
+        snapped_x = round(event.x / grid_size)
+        snapped_y = round(event.y / grid_size)
+        if self.current_map is not None and hasattr(self.current_map, "canvas_to_latlon"):
+            lat, lon = self.current_map.canvas_to_latlon(snapped_y * grid_size, snapped_x * grid_size)
+            self.coord_label.config(text=f"Grid Position: ({snapped_x}, {snapped_y}) | [{lat:.3f}, {lon:.3f}]")
+        else:
+            self.coord_label.config(text="Grid Position: (x, y) | [lat, lon]")
+        self.canvas.delete("hover_rect")
+        x1 = snapped_x * grid_size - grid_size / 2
+        y1 = snapped_y * grid_size - grid_size / 2
+        x2 = x1 + grid_size
+        y2 = y1 + grid_size
+        self.canvas.create_rectangle(x1, y1, x2, y2, outline="white", width=2, tags="hover_rect")
+
 
 class Menu(tk.Frame):
     """Handles the menu for the UAV Agents"""
@@ -202,6 +270,7 @@ class UAVSelectWindow(tk.Toplevel):
         self.canvas = canvas
         self.protocol("WM_DELETE_WINDOW", self.close_popup)
 
+        # Setup button controles
         self.mode_var = tk.StringVar(self)
         self.mode_var.set("Attacker")
         self.name_label = tk.Label(self, text="Name:", font=("Arial", 11))
@@ -212,8 +281,8 @@ class UAVSelectWindow(tk.Toplevel):
         self.type_label.pack(anchor="w", padx=20, pady=(0, 2))
         self.type_row = tk.Frame(self)
         self.type_row.pack(anchor="w", padx=20, pady=(0, 10), fill="x")
-        self.type_var = tk.StringVar(self)
-        self.type_dropdown = tk.OptionMenu(self.type_row, self.type_var, "Seeker")
+        self.selected_agent_type = tk.StringVar(self)
+        self.type_dropdown = tk.OptionMenu(self.type_row, self.selected_agent_type, "Seeker")
         self.type_dropdown.config(font=("Arial", 11), width=18)
         self.type_dropdown.pack(side="left")
 
@@ -230,6 +299,12 @@ class UAVSelectWindow(tk.Toplevel):
 
         self.toggle_btn = tk.Button(self.type_row, textvariable=self.mode_var, font=("Arial", 12), width=10, relief="raised", command=self.toggle_mode)
         self.toggle_btn.pack(side="left", padx=(12, 0), pady=(0, 2))
+
+        # Spawing varibles
+        self.current_target_pos = None
+
+
+        # run an update
         self.update_dropdown()
         self.spawning_state = tk.BooleanVar(self)
         self.spawning_state.set(False)
@@ -244,13 +319,15 @@ class UAVSelectWindow(tk.Toplevel):
             self.options = ["Target"]
 
         for opt in self.options:
-            self.menu.add_command(label=opt, command=lambda value=opt: self.type_var.set(value))
-        self.type_var.set(self.options[0])
+            self.menu.add_command(label=opt, command=lambda value=opt: self.selected_agent_type.set(value))
+    
         if self.mode_var.get() == "Attacker":
             self.toggle_btn.config(bg="#8B0000", fg="white")
         else:
             self.toggle_btn.config(bg="#00008B", fg="white")
-    
+                       
+        self.selected_agent_type.set(self.options[0])
+
     def toggle_mode(self):
         '''Toggle between the Attacker and Defender UAVs'''
         if self.mode_var.get() == "Attacker":
@@ -266,24 +343,59 @@ class UAVSelectWindow(tk.Toplevel):
         self.stop_btn.config(state="normal")
         # Only allow spawning of the selected type from the dropdown
         self.canvas.bind("<Button-1>", self.place_agent)
+        self.parent.can_spawn = True
 
     def place_agent(self, event):
-        '''Place agents on the canvas'''
-        if self.spawning_state.get():
-            return NotImplementedError
-            # self.spawn_agent(self.name_entry.get(), self.type_var.get(), event.x, event.y)
-    
+        '''Place agents on the canvas and store instructions'''
+        if not self.spawning_state.get():
+            print("NOT IN SPAWNING STATE-debug")
+            return
+        
+        if self.parent.is_inside_map(event.x, event.y) is False:
+            print("DEBUG- ADD CHECK TO DETERMIN IF CAN SPAWN ON LAND FOR CERTAIN AGENTS")
+            return
+        
+        snap_x, snap_y, grid_x, grid_y = self.parent.snap_to_grid(event.x, event.y)
+        grid_pos = (grid_x, grid_y)
+        # add new agent
+        agent_type = self.selected_agent_type.get()
+        agent_name = self.name_entry.get() if self.name_entry.get() else agent_type
+        new_agent_data = {
+            'type': agent_type,
+            'pos': grid_pos,
+            'name': agent_name
+            }
+
+        if agent_type in self.parent.spawn_data:
+            self.parent.spawn_data[agent_type].append(new_agent_data)
+        else:
+            print(f"ERROR: placed unknown agent type {agent_type}")
+            return
+
+        # DEBUG REMOVE
+        print(self.selected_agent_type.get())
+        self.draw_spawn_marker(snap_x, snap_y, 'green')
+        print(f"Placed {agent_type} '{agent_name}' at grid {grid_pos} with data: {new_agent_data}")
+  
     def stop_spawning(self):
         '''disable spawning'''
         self.spawning_state.set(False)
         self.spawn_btn.config(text="Spawn", state="normal")
         self.stop_btn.config(state="disabled")
         self.canvas.unbind("<Button-1>")
+        self.parent.can_spawn = False
 
     def close_popup(self):
+        '''Close the popup with rules'''
         self.stop_spawning()
         self.parent.popup_window = None
         self.destroy()
-        
 
-
+    def draw_spawn_marker(self, x, y, color):
+        """Draws a marker circle on the canvas for user feedback."""
+        radius = 5
+        self.canvas.create_oval(
+            x - radius, y - radius, 
+            x + radius, y + radius, 
+            fill=color, tags=("setup_marker")
+        )
