@@ -23,7 +23,7 @@ class UUVModel(mesa.Model):
     # ie ('target', 'test', ) <-see how there is a comma after the new 'test' ageent
     AGENT_CATEGORIES = {
         "attacker" : ("seeker", "detector"),
-        "defender" : ('target', 'gunner is cool')
+        "defender" : ('target', 'gunner is cool',)
     }
     
     def __init__(self, spawns, map, canvas, grid, *args, seed = None, rng = None, **kwargs):

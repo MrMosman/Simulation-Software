@@ -1,5 +1,10 @@
 # University of Massachusetts Dartmouth UUV SIM
 
+### 9/30/25
+* implemented universal agent adding
+* smoothed out some UI taking data from model
+* reimplemented mnay of the old fuctions from the old gui
+
 ### 9/25/25
 * moved more of the old Gui into the proper class
 * figure out what controls what
