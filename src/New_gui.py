@@ -267,6 +267,7 @@ class GeneralFrames(tk.Frame):
 
 class UAVSelectWindow(tk.Toplevel):
     '''UAV selecting popup window'''
+    # Keep in the mind the grid pos and the way agents navigate is flipped
     def __init__(self, parent, title, size, canvas):
         super().__init__(parent)
         # setup the window 
@@ -387,9 +388,9 @@ class UAVSelectWindow(tk.Toplevel):
             return
 
         # DEBUG REMOVE
-        print(self.selected_agent_type.get())
+        # print(self.selected_agent_type.get())
         self.draw_spawn_marker(snap_x, snap_y, 'green')
-        print(f"Placed {agent_type} '{agent_name}' at grid {grid_pos} with data: {new_agent_data}")
+        # print(f"Placed {agent_type} '{agent_name}' at grid {grid_pos} with data: {new_agent_data}")
   
     def stop_spawning(self):
         '''disable spawning'''

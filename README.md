@@ -1,6 +1,8 @@
 # University of Massachusetts Dartmouth UUV SIM
 
 ### 9/30/25
+<!-- keep in mind that the agents retireve the spawn positions then flip them (x, y)to(y,x) -->
+* simple spawning now works as well
 * Scrum merged the gd_gui to main
 * implemented universal agent adding
 * smoothed out some UI taking data from model

@@ -10,16 +10,18 @@ from shapely.geometry import Point, shape
 from cell import Cell
 
 class DetectorAgent(mesa.Agent):
-
+    '''Detector Agnet for a sensor'''
+    # keep in mind that the spawns pos(x,y) are flipped
     def __init__(self, model, spawn, map, canvas, grid, *args, **kwargs):
         super().__init__(model, *args, **kwargs)
         # Target and spawn
+        
         self.spawn = spawn
-        self.position = [grid[spawn[0]][spawn[1]].pos_x, grid[spawn[0]][spawn[1]].pos_y]
+        self.position = [grid[spawn[1]][spawn[0]].pos_x, grid[spawn[1]][spawn[0]].pos_y]
 
 
         # varibles
-        self.radius = 10
+        self.radius = 20
 
         # tkinter gui
         self.map = map

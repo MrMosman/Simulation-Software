@@ -65,7 +65,7 @@ class Grid:
         """
         for debugging purposes
         """
-        print(len(self.grid))
+        print(f'Grid length: {len(self.grid)}')
         grid_string = ""
         for row in self.grid:
             for cell in row:
