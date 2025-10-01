@@ -1,6 +1,7 @@
 # University of Massachusetts Dartmouth UUV SIM
 
 ### 9/30/25
+* Scrum merged the gd_gui to main
 * implemented universal agent adding
 * smoothed out some UI taking data from model
 * reimplemented mnay of the old fuctions from the old gui
