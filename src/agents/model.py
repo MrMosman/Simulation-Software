@@ -4,9 +4,7 @@ import pandas as pd
 import mesa
 
 
-
-
-from . import agent, detector_agent
+from . import agent, detector_agent, search_agent
 
 
 class UUVModel(mesa.Model):
@@ -15,16 +13,19 @@ class UUVModel(mesa.Model):
     # needs to be manulay set here so spell correctly
     AGENT_MAP = {
         "seeker" : agent.UUVAgent,
-        "detector" : detector_agent.DetectorAgent
+        "detector" : detector_agent.DetectorAgent,
+        "search" : search_agent.SearchAgent
     }
 
     # Univerisal agent types
     # if add new element must add a comma to end 
     # ie ('target', 'test', ) <-see how there is a comma after the new 'test' ageent
     AGENT_CATEGORIES = {
-        "attacker" : ("seeker", "detector"),
+        "attacker" : ("seeker", "detector", "search"),
         "defender" : ('target',)
     }
+
+    POP_SIZE = 10
     
     def __init__(self, spawns, map, canvas, grid, *args, seed = None, rng = None, **kwargs):
         super().__init__(*args, seed=seed, rng=rng, **kwargs)
