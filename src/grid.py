@@ -13,8 +13,8 @@ class Grid:
         self.grid = []
         self.canvas = canvas
         self.img_tk = None
-        self.row_space = self.get_cell_spacing(self.width)  #rows invole width
-        self.col_space = self.get_cell_spacing(self.height) #cols invole hieght
+        self.row_space = self.get_cell_spacing(self.width)  #rows involve width
+        self.col_space = self.get_cell_spacing(self.height) #cols involve hieght
         self.cell_size = self.row_space
         self.draw_test_grid()
 

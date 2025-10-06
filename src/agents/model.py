@@ -25,7 +25,11 @@ class UUVModel(mesa.Model):
         "defender" : ('target',)
     }
 
+    # Genetic Algorithm parameters
     POP_SIZE = 10
+    GENERATIONS = 50
+    MUTATION_RATE = 0.1
+    AGENT_CHROMESOME_COMMAND = {'L': 1, 'R': 2, 'U': 3, 'D': 4}
     
     def __init__(self, spawns, map, canvas, grid, *args, seed = None, rng = None, **kwargs):
         super().__init__(*args, seed=seed, rng=rng, **kwargs)
@@ -43,7 +47,7 @@ class UUVModel(mesa.Model):
         # flatten catagories
         self.all_agent_types = [
             agent_type
-            for types_tuple in self.AGENT_CATEGORIES.values() # Get ('Seeker', 'Detector'), ('Target',)
+            for types_tuple in self.AGENT_CATEGORIES.values() # Get agent attatckers/defenders
             for agent_type in types_tuple                    # Flatten the tuples
         ]
         # set agent populations
@@ -69,9 +73,10 @@ class UUVModel(mesa.Model):
                 print(f'CREATE AGENT->type: {agent_type}, pos: {pos}')
                 self.create_agent(type=agent_type, pos=pos)
 
+
     def step(self):
         """advance model by one step"""
-        self.agents.do("move_to_target")
+        self.agents.do("step")
 
     def agent_registration(self, agent_instance, pos, type_name):
         '''Inital Agent registration'''

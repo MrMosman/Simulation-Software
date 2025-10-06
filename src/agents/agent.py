@@ -5,27 +5,29 @@ import pandas as pd
 import mesa
 import geopandas as gpd
 from shapely.geometry import Point, shape
-from salinity import Salinity
-from temperature import Temperature
+
 
 #user defined
 from map import MapControl
 from cell import Cell
 
+from salinity import Salinity
+from temperature import Temperature
+
 class UUVAgent(mesa.Agent):
     """UUV agent testing class"""
 
-    def __init__(self, model, spawn, map, target, canvas, grid, *args, **kwargs):
+    def __init__(self, model, spawn, map, canvas, grid, *args, **kwargs):
+        # remember to add target back to this
         super().__init__(model, *args, **kwargs)
         # Target and spawn
         self.spawn = spawn
-        self.dest = target
-        # print(f'spawn{spawn}')
-        # print(f'target{target}')
-        self.position = [grid[spawn[0]][spawn[1]].pos_x, grid[spawn[0]][spawn[1]].pos_y]
-        self.target = [grid[target[0]][target[1]].pos_x, grid[target[0]][target[1]].pos_y]
-        # print(f'pos={self.position}')
-        # print(f'tar={self.target}')
+        # self.dest = target
+        self.dest = [35, 12] #hard code testing
+
+        self.position = [grid[spawn[1]][spawn[0]].pos_x, grid[spawn[1]][spawn[0]].pos_y]
+        # self.target = [grid[target[0]][target[1]].pos_x, grid[target[0]][target[1]].pos_y]
+        self.target = [grid[self.dest[1]][self.dest[0]].pos_x, grid[self.dest[1]][self.dest[0]].pos_y] #hard code testing
         self.salinity = Salinity()
         self.temp = Temperature()
 
@@ -88,7 +90,7 @@ class UUVAgent(mesa.Agent):
         # print(f'unitvector{unit_vector}')
         return unit_vector
         
-    def move_to_target(self):
+    def step(self):
         """simple move towards target set function"""
         new_direction = self.getTargetDir()
         if (self.position[0] != self.target[0]) or (self.position[1] != self.target[1]):
@@ -243,7 +245,7 @@ class UUVAgent(mesa.Agent):
         return self.grid[row][col].id != 1
 
     def is_destination(self, row, col):
-        """check if cell si teh destination"""
+        """check if cell is the destination"""
         return row == self.dest[0] and col == self.dest[1]
 
     def calculate_h_value(self, row, col):

@@ -17,11 +17,25 @@ class SearchAgent(mesa.Agent):
         # Target and spawn
         
         self.spawn = spawn
-        self.position = [grid[spawn[1]][spawn[0]].pos_x, grid[spawn[1]][spawn[0]].pos_y]
+        self.pos = [grid[spawn[1]][spawn[0]].pos_x, grid[spawn[1]][spawn[0]].pos_y] #[x,y] for canvas
+        self.grid_index = [spawn[1], spawn[0]]
+        self.grid = np.array(grid)
+        self.ROW, self.COL = self.grid.shape
+        self.grid = grid
 
         # Genetic Algo Vars
-        self.chromosone = None
-        self.target = (17, 25) #remove hardcode latter
+        self.chromosone = {
+            'pos': [],   #final position
+            'tot_moves': 0,         #how many times it moved
+            'commands' : ['U', 'U', 'U', 'U', 'U', 'U'],        #list of movment commands
+            'failed'   : False      #for if detected, died, crashed, etc
+        }
+        self.target = (17, 25) #remove hardcode latter for 
+        self.fitness = 0
+        self.is_failed = False
+        self.next_command_num = 0
+
+
 
         # varibles
         self.radius = 20
@@ -31,8 +45,84 @@ class SearchAgent(mesa.Agent):
         # tkinter gui
         self.map = map
         self.canvas = canvas
-        self.oval = self.canvas.create_oval(self.position[0]-5,self.position[1]-5, self.position[0]+5, self.position[1]+5, fill=self.gui_color, tags=self.tag)
+        self.oval = self.canvas.create_oval(self.pos[0]-5,self.pos[1]-5, self.pos[0]+5, self.pos[1]+5, fill=self.gui_color, tags=self.tag)
         self.canvas.lift(self.oval)
 
     def step(self):
-        print("i have spawned")
+        '''Called by the Mesa Model'''
+        if not self.is_failed:
+            if self.next_command_num < len(self.chromosone.get('commands')):
+                next_command = self.chromosone.get('commands')[self.next_command_num]
+                self.next_command_num +=1
+            self.get_next_pos(next_command)
+            print(f'screen pos: {self.pos}')
+            print(f'grid pos: {self.grid_index}')
+            
+
+    def get_next_pos(self, command):
+        '''Return the next position and if valid'''
+        match command:
+            case 'L':
+                if self.is_valid(self.grid_index[0]-1, self.grid_index[1]):# check if in bounds
+                    if self.is_unblocked(self.grid_index[0]-1, self.grid_index[1]): # check if land
+                        self.grid_index = [self.grid_index[0]-1, self.grid_index[1]]
+                        self.pos = [self.grid[self.grid_index[0]][self.grid_index[1]].pos_x, self.grid[self.grid_index[0]][self.grid_index[1]].pos_y]
+                        self.canvas.move(self.oval, self.pos[0], self.pos[1]) 
+                    else:
+                        print('hit land')
+                        self.is_failed = True
+                else:
+                    print('out of bounds')
+                    self.is_failed = True
+            case 'R':
+                if self.is_valid(self.grid_index[0]+1, self.grid_index[1]):# check if in bounds
+                    if self.is_unblocked(self.grid_index[0]+1, self.grid_index[1]): # check if land
+                        self.grid_index = [self.grid_index[0]+1, self.grid_index[1]]
+                        self.pos = [self.grid[self.grid_index[0]][self.grid_index[1]].pos_x, self.grid[self.grid_index[0]][self.grid_index[1]].pos_y]
+                        self.canvas.move(self.oval, self.pos[0], self.pos[1]) 
+                    else:
+                        print('hit land')
+                        self.is_failed = True
+                else:
+                    print('out of bounds')
+                    self.is_failed = True
+            case 'U':
+                if self.is_valid(self.grid_index[0], self.grid_index[1]-1):# check if in bounds
+                    if self.is_unblocked(self.grid_index[0], self.grid_index[1]-1): # check if land
+                        self.grid_index = [self.grid_index[0], self.grid_index[1]-1]
+                        self.pos = [self.grid[self.grid_index[0]][self.grid_index[1]].pos_x, self.grid[self.grid_index[0]][self.grid_index[1]].pos_y]
+                        self.canvas.move(self.oval, self.pos[0], self.pos[1]) 
+                    else:
+                        print('hit land')
+                        self.is_failed = True
+                else:
+                    print('out of bounds')
+                    self.is_failed = True
+            case 'D':
+                if self.is_valid(self.grid_index[0], self.grid_index[1]+1):# check if in bounds
+                    if self.is_unblocked(self.grid_index[0], self.grid_index[1]+1): # check if 
+                        self.grid_index = [self.grid_index[0], self.grid_index[1]+1]
+                        self.pos = [self.grid[self.grid_index[0]][self.grid_index[1]].pos_x, self.grid[self.grid_index[0]][self.grid_index[1]].pos_y]
+
+                        self.canvas.move(self.oval, self.pos[0], self.pos[1]) 
+                    else:
+                        print('hit land')
+                        self.is_failed = True
+                else:
+                    print('out of bounds')
+                    self.is_failed = True 
+            case _:
+                print(f"Unknow command : {command}")
+
+    def is_valid(self, row, col):
+        """Check if a cell is valid"""
+        return (row >= 0) and (row < self.ROW) and (col >= 0) and (col < self.COL)
+
+    def is_unblocked(self, row, col):
+        """Check if cell is: 1 is land, 0 is water"""
+        return self.grid[row][col].id != 1
+
+    def is_destination(self, row, col):
+        """Check if cell is the destination"""
+        return row == self.dest[0] and col == self.dest[1]
+
