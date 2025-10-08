@@ -57,10 +57,13 @@ class App(tk.Tk):
 
         # sub-menus
         self.file_section = GeneralFrames(parent=self.menu, size=(440, 90), side='top', text='Map Selction')
-        self.agent_menu_section = GeneralFrames(parent=self.menu, size=(440, 150), side='top', text='Agent Selection')
+        self.agent_menu_section = GeneralFrames(parent=self.menu, size=(440, 200), side='top', text='Agent Selection')
         self.sim_options_section = GeneralFrames(parent=self.menu, size=(440, 150), side='top', text='Simulation Options')
         self.sub_sim_section = tk.Frame(self.sim_options_section)
         self.sub_sim_section.pack(expand=True)
+        self.config_menu_section = GeneralFrames(parent=self.menu,size=(440,90),side='top',text="Config Options")
+        self.sub_config_section = tk.Frame(self.config_menu_section)
+        self.sub_config_section.pack(expand=True)
 
         #sub-menu buttons
         self.file_button = tk.Button(self.file_section, text="Select", command=self.select_file, bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised")
@@ -73,6 +76,10 @@ class App(tk.Tk):
         self.start_button.grid(row=0, column=0, padx=10, pady=5)
         self.reset_sim_button.grid(row=0, column=1, padx=10, pady=5)
         self.exit_sim_button.grid(row=1, column=0, columnspan=2, padx=10, pady=5, sticky="ew")
+        self.save_button = tk.Button(self.sub_config_section, text="Save Config", bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised", command=lambda: print("Save config - WIP"))
+        self.load_button = tk.Button(self.sub_config_section, text="Load Config", bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised", command=lambda: print("Load config - WIP"))
+        self.save_button.grid(row=0, column=0, padx=10, pady=5)
+        self.load_button.grid(row=0, column=1, padx=10, pady=5)
 
         # labels in menus
         self.uuv_info_label = tk.Label(self.file_menu, text="UUVs: 0", font=("Arial", 11), anchor="w", justify="left")
