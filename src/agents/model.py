@@ -14,14 +14,14 @@ class UUVModel(mesa.Model):
     AGENT_MAP = {
         "seeker" : agent.UUVAgent,
         "detector" : detector_agent.DetectorAgent,
-        "search" : search_agent.SearchAgent
+        "Gunner is the best" : search_agent.SearchAgent
     }
 
     # Univerisal agent types
     # if add new element must add a comma to end 
     # ie ('target', 'test', ) <-see how there is a comma after the new 'test' ageent
     AGENT_CATEGORIES = {
-        "attacker" : ("seeker", "detector", "search"),
+        "attacker" : ("seeker", "detector", "Gunner is the best"),
         "defender" : ('target',)
     }
 
