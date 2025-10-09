@@ -1,4 +1,28 @@
 # University of Massachusetts Dartmouth UUV SIM
+### SCRUM 14 & 16 changelog:
+Added Lines (New_Gui):
+SCRUM 14:
+144-152: Added function to add either target or seeker UUV name and spawn location, restoring previous functionality.
+196-197: Call the above function within on_start_click
+219-220: Reset the trackers to 0 within the reset_simulation when called
+
+SCRUM 16 (New_gui):
+72-77: Create scrollbar, listbox, and agent display data
+83-85: Scrollbar and label pack
+114-128: Added 2 functions, one to update agent listbox, other to add the agent to the listbox
+218: Wipe the list upon resetting
+417: Updates Listbox when agent is spawned
+
+Changed lines in (Model_py):
+SCRUM 16:
+Needed to change line 85 from:
+self.agent_registration(agent_instance=agent_category, pos=agent_pos, type_name=agent_name)
+
+to:
+self.agent_registration(agent_instance=agent_category, pos=agent_pos, type_name=agent_type)
+
+reason: When trying to run the simulation I was getting an error because the type_name was being passed as the agents name, but the self.population_count takes the agent types so I changed it to agent_type. 
+
 
 ### 9/30/25
 * Scrum merged the gd_gui to main

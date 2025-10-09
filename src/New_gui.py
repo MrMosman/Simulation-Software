@@ -73,9 +73,11 @@ class App(tk.Tk):
         type_width = 8
         count_width = 4
         label_text = f"{'Name:':<{name_width}} {'Type:':<{type_width}} {'Count:':>{count_width}}"
+        #Scroll bar & scrollbar label creation
         self.scrollbar_label = tk.Label(self.agent_menu_section, text=label_text, font=("Consolas", 12))
         self.scrollbar = tk.Scrollbar(self.agent_menu_section)
         self.agent_display_data = {}  # {(name, type): count}
+        #Creation of listbox and command to sync it with scrollbar
         self.agent_listbox = tk.Listbox(self.agent_menu_section, font=("Consolas", 11), width=30, height=8)
         self.scrollbar.config(command=self.agent_listbox.yview)
         self.agent_listbox.config(yscrollcommand=self.scrollbar.set)
@@ -193,8 +195,6 @@ class App(tk.Tk):
                     grid=self.map_grid,
                     canvas=self.canvas
                     )
-            self.update_agent_info_label('seeker', self.uuv_info_label)
-            self.update_agent_info_label('target', self.target_info_label)
             self.is_running = True
             self.animate()
         else:
@@ -221,6 +221,10 @@ class App(tk.Tk):
         self.coord_label.config(text="Grid Position: (x, y) | [lat, lon]")
         self.start_button.config(state="normal", bg="#333333", text="▶ Start", fg="white", command=self.on_start_click)
         self.canvas_frame.config(bg="#333333")
+        #Added to wipe agent spawn data on reset
+        for agent_type in self.spawn_data:
+            self.spawn_data[agent_type] = []
+            self.agent_display_data.clear()
 
     def animate(self):
         '''animate the screen'''
