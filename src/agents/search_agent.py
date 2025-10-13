@@ -140,4 +140,18 @@ class SearchAgent(mesa.Agent):
         y2=center_y+5
         self.canvas.coords(self.oval, x1, y1, x2, y2) 
 
+    def mutate_genes(self):
+        """Mutate the genes"""
+        return NotImplementedError
 
+    def create_genome(self):
+        """Create the genome"""
+        return NotImplementedError
+    
+    def mate(self):
+        """Mate and produces offspring"""
+        return NotImplementedError
+    
+    def calulate_fitness(self):
+        """Calulate the fitness score"""
+        return NotImplementedError

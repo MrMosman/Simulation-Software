@@ -126,6 +126,9 @@ class UUVModel(mesa.Model):
 
         AgentClass.create_agents(**agent_kwargs)
 
-
+    def generate_random_genome(self, agent_type):
+        """Create a random genom for a population"""
+        agent_type
+        return NotImplementedError
 
 
