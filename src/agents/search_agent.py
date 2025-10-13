@@ -141,3 +141,5 @@ class SearchAgent(mesa.Agent):
         self.canvas.coords(self.oval, x1, y1, x2, y2) 
 
 
+
+
