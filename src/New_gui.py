@@ -64,15 +64,31 @@ class App(tk.Tk):
         self.config_menu_section = GeneralFrames(parent=self.menu,size=(440,90),side='top',text="Config Options")
         self.sub_config_section = tk.Frame(self.config_menu_section)
         self.sub_config_section.pack(expand=True)
+        
 
         #sub-menu buttons
         self.file_button = tk.Button(self.file_section, text="Select", command=self.select_file, bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised")
         self.agent_menu_button = tk.Button(self.agent_menu_section, text="Add Agent", command=self.create_popup, bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised")
+        name_width = 10
+        type_width = 8
+        count_width = 4
+        label_text = f"{'Name:':<{name_width}} {'Type:':<{type_width}} {'Count:':>{count_width}}"
+        #Scroll bar & scrollbar label creation
+        self.scrollbar_label = tk.Label(self.agent_menu_section, text=label_text, font=("Consolas", 12))
+        self.scrollbar = tk.Scrollbar(self.agent_menu_section)
+        self.agent_display_data = {}  # {(name, type): count}
+        #Creation of listbox and command to sync it with scrollbar
+        self.agent_listbox = tk.Listbox(self.agent_menu_section, font=("Consolas", 11), width=30, height=8)
+        self.scrollbar.config(command=self.agent_listbox.yview)
+        self.agent_listbox.config(yscrollcommand=self.scrollbar.set)
         self.start_button = tk.Button(self.sub_sim_section, text="▶ Start", command=self.on_start_click, bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised")
         self.reset_sim_button = tk.Button(self.sub_sim_section, text="Reset", command= lambda: self.reset_simulation(), bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised")
         self.exit_sim_button = tk.Button(self.sub_sim_section, text="Exit", command=self.destroy, bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised")
         self.file_button.pack(side='top', pady=4)
         self.agent_menu_button.pack(side='top')
+        self.scrollbar_label.pack(side='top', fill='y', anchor='nw', padx=(5,0), pady=(5,0))
+        self.agent_listbox.pack(side='left', fill='y', padx=(0, 2))
+        self.scrollbar.pack(side='right', fill='y')
         self.start_button.grid(row=0, column=0, padx=10, pady=5)
         self.reset_sim_button.grid(row=0, column=1, padx=10, pady=5)
         self.exit_sim_button.grid(row=1, column=0, columnspan=2, padx=10, pady=5, sticky="ew")
@@ -82,10 +98,10 @@ class App(tk.Tk):
         self.load_button.grid(row=0, column=1, padx=10, pady=5)
 
         # labels in menus
-        self.uuv_info_label = tk.Label(self.file_menu, text="UUVs: 0", font=("Arial", 11), anchor="w", justify="left")
+        self.uuv_info_label = tk.Label(self.file_menu, text="Seekers: 0", font=("Arial", 11), anchor="w", justify="left")
         self.uuv_info_label.pack(fill="x", padx=10, pady=2)
         
-        self.target_info_label = tk.Label(self.file_menu, text="Target: None", font=("Arial", 11), anchor="w", justify="left")
+        self.target_info_label = tk.Label(self.file_menu, text="Targets: 0", font=("Arial", 11), anchor="w", justify="left")
         self.target_info_label.pack(fill="x", padx=10, pady=2)
 
         self.coord_label = tk.Label(self.file_menu, text="Grid Position: (x, y) | [lat, lon]", font=("Arial", 11), anchor="w")
@@ -100,6 +116,41 @@ class App(tk.Tk):
 
         # run
         self.mainloop()
+
+    def update_agent_info_label(self, agent_type, label_widget):
+        """
+        Updates the given label_widget with the count and positions of the specified agent_type.
+        """
+        agents = self.spawn_data.get(agent_type, [])
+        count = len(agents)
+        if count == 0:
+            label_widget.config(text=f"{agent_type.title()}s: 0")
+            return
+        info_items = [f"{agent_type.title()}s: {count}"]
+        for idx, agent in enumerate(agents, 1):
+            info_items.append(f"#{idx}: {agent['pos']}")
+        label_widget.config(text=" | ".join(info_items))
+
+    def update_agent_listbox(self):
+        """Refresh the agent Listbox with current agent data."""
+        self.agent_listbox.delete(0, tk.END)
+        # Set fixed widths for each column
+        name_width = 12
+        type_width = 10
+        count_width = 4
+        for (name, agent_type), count in self.agent_display_data.items():
+            # Format each entry with fixed width columns
+            entry = f"{name:<{name_width}} {agent_type:<{type_width}} {count:>{count_width}}"
+            self.agent_listbox.insert(tk.END, entry)
+
+    def add_agent_to_display(self, name, agent_type):
+        """Add or update agent in the display dictionary."""
+        key = (name, agent_type)
+        if key in self.agent_display_data:
+            self.agent_display_data[key] += 1
+        else:
+            self.agent_display_data[key] = 1
+        self.update_agent_listbox()
 
     def select_file(self):
         '''command for map file selection'''
@@ -144,7 +195,6 @@ class App(tk.Tk):
                     grid=self.map_grid,
                     canvas=self.canvas
                     )
-
             self.is_running = True
             self.animate()
         else:
@@ -165,11 +215,16 @@ class App(tk.Tk):
             self.after_cancel(self.animation_job)
             self.animation_job = None
         self.is_running = False
-        self.uuv_info_label.config(text="UUVs: 0")
-        self.target_info_label.config(text="Target: None")
+        self.agent_listbox.delete(0, tk.END)
+        self.uuv_info_label.config(text="Seekers: 0")
+        self.target_info_label.config(text="Targets: 0")
         self.coord_label.config(text="Grid Position: (x, y) | [lat, lon]")
         self.start_button.config(state="normal", bg="#333333", text="▶ Start", fg="white", command=self.on_start_click)
         self.canvas_frame.config(bg="#333333")
+        #Added to wipe agent spawn data on reset
+        for agent_type in self.spawn_data:
+            self.spawn_data[agent_type] = []
+            self.agent_display_data.clear()
 
     def animate(self):
         '''animate the screen'''
@@ -391,6 +446,10 @@ class UAVSelectWindow(tk.Toplevel):
 
         if agent_type in self.parent.spawn_data:
             self.parent.spawn_data[agent_type].append(new_agent_data)
+            # Update the agent display when a new agent is added
+            self.parent.add_agent_to_display(agent_name, agent_type)
+            self.parent.update_agent_info_label('seeker', self.parent.uuv_info_label)
+            self.parent.update_agent_info_label('target', self.parent.target_info_label)
         else:
             print(f"ERROR: placed unknown agent type {agent_type}")
             return
