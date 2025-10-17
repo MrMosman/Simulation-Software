@@ -1,7 +1,8 @@
 import tkinter as tk
 import numpy as np
 import pandas as pd
-import mesa
+import mesa 
+
 
 
 from . import agent, detector_agent, search_agent
@@ -73,10 +74,18 @@ class UUVModel(mesa.Model):
                 print(f'CREATE AGENT->type: {agent_type}, pos: {pos}')
                 self.create_agent(type=agent_type, pos=pos)
 
+        # Data cataloging
+        self.data_collecter = mesa.DataCollector(
+            agent_reporters={"Finnished_agent_count": "is_finnished"}
+        )
+
+
 
     def step(self):
         """advance model by one step"""
         self.agents.do("step")
+        self.data_collecter.collect(self)
+        print(self.data_collecter.get_agent_vars_dataframe().head)
 
     def agent_registration(self, agent_instance, pos, type_name):
         '''Inital Agent registration'''
@@ -111,7 +120,7 @@ class UUVModel(mesa.Model):
             print(f"Error: Unknown agent type {agent_type}")
             return
 
-        # Prepare kwargs for the agent's constructor self, model, spawn, map, canvas, grid,
+        # Prepare kwargs for the agent's constructor self, model, spawn, map, canvas, grid,          
         agent_kwargs = {
             "model": self,
             "n" : 1,
@@ -126,9 +135,8 @@ class UUVModel(mesa.Model):
 
         AgentClass.create_agents(**agent_kwargs)
 
-    def generate_random_genome(self, agent_type):
-        """Create a random genom for a population"""
-        agent_type
+    def create_GA_population(self, agent_type):
+        """Create a random genome for a population"""
         return NotImplementedError
 
 

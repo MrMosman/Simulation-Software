@@ -8,6 +8,8 @@ from shapely.geometry import Point, shape
 
 #user defined
 from cell import Cell
+from . import model
+
 
 class SearchAgent(mesa.Agent):
     '''Search Agent for GA'''
@@ -24,16 +26,14 @@ class SearchAgent(mesa.Agent):
         self.grid = grid
 
         # Genetic Algo Vars
-        self.chromosone = {
-            'pos': [],   #final position
-            'tot_moves': 0,         #how many times it moved
-            'commands' : ['R', 'R', 'R'],        #list of movment commands
-            'failed'   : False      #for if detected, died, crashed, etc
-        }
+        self.chromosone = self.create_genome(self.random.randint(1, 10))
+        self.commands = iter(self.chromosone)
+        print(self.chromosone)
         self.target = (17, 25) #remove hardcode latter for 
         self.fitness = 0
         self.is_failed = False
         self.next_command_num = 0
+        self.is_finnished = False
 
 
 
@@ -52,17 +52,20 @@ class SearchAgent(mesa.Agent):
     def step(self):
         '''Called by the Mesa Model'''
         if not self.is_failed:
-            if self.next_command_num < len(self.chromosone.get('commands')):
-                next_command = self.chromosone.get('commands')[self.next_command_num]
+            if self.next_command_num < len(self.chromosone):
+                next_command = next(self.commands)
                 self.next_command_num +=1
                 self.get_next_pos(next_command)
                 self.update_icon_pos()
             else:
+                self.is_finnished=True
                 return
             print(f'pix pos: {self.pos_pixel}')
             print(f'grid pos: {self.grid_index}')
+            print(f'failed: {self.is_failed}')
+        else:
+            self.is_finnished = True
             
-
     def get_next_pos(self, command):
         '''Return the next position and if valid'''
         match command:
@@ -144,9 +147,15 @@ class SearchAgent(mesa.Agent):
         """Mutate the genes"""
         return NotImplementedError
 
-    def create_genome(self):
-        """Create the genome"""
-        return NotImplementedError
+    def create_genome(self, initial_size):
+        """Create and return the genome"""
+        # use the A* to get a better "idea" of where target is
+        # for now be random
+        temp=list()
+        chrome_list = list(model.UUVModel.AGENT_CHROMESOME_COMMAND.keys())
+        for i in range(initial_size):
+            temp.append(self.random.choice(chrome_list))
+        return temp
     
     def mate(self):
         """Mate and produces offspring"""
