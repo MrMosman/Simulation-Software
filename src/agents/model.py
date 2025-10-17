@@ -78,6 +78,7 @@ class UUVModel(mesa.Model):
         self.data_collecter = mesa.DataCollector(
             agent_reporters={"Finnished_agent_count": "is_finnished"}
         )
+        self.score_GA()
 
 
 
@@ -85,7 +86,8 @@ class UUVModel(mesa.Model):
         """advance model by one step"""
         self.agents.do("step")
         self.data_collecter.collect(self)
-        print(self.data_collecter.get_agent_vars_dataframe().head)
+        # print(self.data_collecter.get_agent_vars_dataframe().head)
+        self.score_GA()
 
     def agent_registration(self, agent_instance, pos, type_name):
         '''Inital Agent registration'''
@@ -138,5 +140,19 @@ class UUVModel(mesa.Model):
     def create_GA_population(self, agent_type):
         """Create a random genome for a population"""
         return NotImplementedError
+    
+    def score_GA(self):
+        """Scores and orders the fitness fucntion"""
+        ga_class = self.AGENT_MAP.get('GA')
+        ga_agent_set = self.agents_by_type.get(ga_class)
+        if ga_agent_set:
+            ga_population = list(ga_agent_set)
+            ga_population = sorted(ga_population, key= lambda x:x.calculate_fitness())
+            for agent in ga_population:
+                # Call the method here as well to get the score
+                fitness_score = agent.calculate_fitness()
+                print(f"Agent ID: {agent.unique_id}, Fitness Score: {fitness_score}")
+            
+
 
 

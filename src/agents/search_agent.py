@@ -24,12 +24,13 @@ class SearchAgent(mesa.Agent):
         self.grid = np.array(grid)
         self.ROW, self.COL = self.grid.shape
         self.grid = grid
+        self.target_index = [18, 26]
+
 
         # Genetic Algo Vars
-        self.chromosone = self.create_genome(self.random.randint(1, 10))
+        self.chromosone = self.create_chromosone(self.random.randint(1, 10))
         self.commands = iter(self.chromosone)
-        print(self.chromosone)
-        self.target = (17, 25) #remove hardcode latter for 
+        self.target = (17, 25) #remove hardcode later for 
         self.fitness = 0
         self.is_failed = False
         self.next_command_num = 0
@@ -51,18 +52,19 @@ class SearchAgent(mesa.Agent):
 
     def step(self):
         '''Called by the Mesa Model'''
-        if not self.is_failed:
+        if not self.is_failed or not self.is_finnished:
             if self.next_command_num < len(self.chromosone):
                 next_command = next(self.commands)
                 self.next_command_num +=1
                 self.get_next_pos(next_command)
-                self.update_icon_pos()
+                self.update_icon_pos()              
             else:
-                self.is_finnished=True
+                self.is_finnished = True
                 return
             print(f'pix pos: {self.pos_pixel}')
             print(f'grid pos: {self.grid_index}')
             print(f'failed: {self.is_failed}')
+            print(f'manhatten: {self.calculate_fitness()}')
         else:
             self.is_finnished = True
             
@@ -147,7 +149,7 @@ class SearchAgent(mesa.Agent):
         """Mutate the genes"""
         return NotImplementedError
 
-    def create_genome(self, initial_size):
+    def create_chromosone(self, initial_size):
         """Create and return the genome"""
         # use the A* to get a better "idea" of where target is
         # for now be random
@@ -161,6 +163,17 @@ class SearchAgent(mesa.Agent):
         """Mate and produces offspring"""
         return NotImplementedError
     
-    def calulate_fitness(self):
-        """Calulate the fitness score"""
-        return NotImplementedError
+    def calculate_fitness(self):
+        """Calulate the fitness score of this agent using manhatten distance"""
+        x1 = self.grid_index[0]
+        y1 = self.grid_index[1]
+        x2 = self.target_index[0]
+        y2 = self.target_index[1]
+        return  abs(x1-x2) + abs(y1-y2)
+
+    def increase_chromosone(self, amt_to_add):
+        """Add more genomes to the chromeosone"""
+        temp = list()
+        temp = self.create_chromosone(amt_to_add)
+        self.chromosone=self.chromosone + temp
+        self.commands = iter(self.chromosone)
