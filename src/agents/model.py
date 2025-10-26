@@ -117,7 +117,7 @@ class UUVModel(mesa.Model):
                 agent_pos = spawn_data.get('pos')
                 agent_name = spawn_data.get('name')
                 self.agent_registration(agent_instance=agent_category, pos=agent_pos, type_name=agent_type)
-                # print(f'{agent_type} and {agent_pos}') #DEBUG
+                print(f'{agent_type} and {agent_pos}') #DEBUG
         # DEBUG 
         # print(self.population_count)
         # print(self.population_position)
