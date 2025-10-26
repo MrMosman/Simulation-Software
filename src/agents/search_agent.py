@@ -14,7 +14,7 @@ from . import model
 class SearchAgent(mesa.Agent):
     '''Search Agent for GA'''
     # keep in mind that the spawns pos(x,y) are flipped
-    def __init__(self, model, spawn, map, canvas, grid, *args, **kwargs):
+    def __init__(self,model, spawn, map, canvas, grid, group_id, *args, **kwargs):
         super().__init__(model, *args, **kwargs)
         # Target and spawn
         
@@ -35,7 +35,7 @@ class SearchAgent(mesa.Agent):
         self.is_failed = False
         self.next_command_num = 0
         self.is_finnished = False
-
+        self.group_id = group_id
 
 
         # varibles
@@ -61,10 +61,10 @@ class SearchAgent(mesa.Agent):
             else:
                 self.is_finnished = True
                 return
-            print(f'pix pos: {self.pos_pixel}')
-            print(f'grid pos: {self.grid_index}')
-            print(f'failed: {self.is_failed}')
-            print(f'manhatten: {self.calculate_fitness()}')
+            # print(f'pix pos: {self.pos_pixel}')
+            # print(f'grid pos: {self.grid_index}')
+            # print(f'failed: {self.is_failed}')
+            # print(f'manhatten: {self.calculate_fitness()}')
         else:
             self.is_finnished = True
             
