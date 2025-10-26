@@ -8,11 +8,13 @@ from shapely.geometry import Point, shape
 
 #user defined
 from cell import Cell
+from . import model
+
 
 class SearchAgent(mesa.Agent):
     '''Search Agent for GA'''
     # keep in mind that the spawns pos(x,y) are flipped
-    def __init__(self, model, spawn, map, canvas, grid, *args, **kwargs):
+    def __init__(self,model, spawn, map, canvas, grid, group_id, *args, **kwargs):
         super().__init__(model, *args, **kwargs)
         # Target and spawn
         
@@ -22,19 +24,18 @@ class SearchAgent(mesa.Agent):
         self.grid = np.array(grid)
         self.ROW, self.COL = self.grid.shape
         self.grid = grid
+        self.target_index = [18, 26]
+
 
         # Genetic Algo Vars
-        self.chromosone = {
-            'pos': [],   #final position
-            'tot_moves': 0,         #how many times it moved
-            'commands' : ['R', 'R', 'R'],        #list of movment commands
-            'failed'   : False      #for if detected, died, crashed, etc
-        }
-        self.target = (17, 25) #remove hardcode latter for 
+        self.chromosone = self.create_chromosone(self.random.randint(1, 10))
+        self.commands = iter(self.chromosone)
+        self.target = (17, 25) #remove hardcode later for 
         self.fitness = 0
         self.is_failed = False
         self.next_command_num = 0
-
+        self.is_finnished = False
+        self.group_id = group_id
 
 
         # varibles
@@ -51,18 +52,22 @@ class SearchAgent(mesa.Agent):
 
     def step(self):
         '''Called by the Mesa Model'''
-        if not self.is_failed:
-            if self.next_command_num < len(self.chromosone.get('commands')):
-                next_command = self.chromosone.get('commands')[self.next_command_num]
+        if not self.is_failed or not self.is_finnished:
+            if self.next_command_num < len(self.chromosone):
+                next_command = next(self.commands)
                 self.next_command_num +=1
                 self.get_next_pos(next_command)
-                self.update_icon_pos()
+                self.update_icon_pos()              
             else:
+                self.is_finnished = True
                 return
-            print(f'pix pos: {self.pos_pixel}')
-            print(f'grid pos: {self.grid_index}')
+            # print(f'pix pos: {self.pos_pixel}')
+            # print(f'grid pos: {self.grid_index}')
+            # print(f'failed: {self.is_failed}')
+            # print(f'manhatten: {self.calculate_fitness()}')
+        else:
+            self.is_finnished = True
             
-
     def get_next_pos(self, command):
         '''Return the next position and if valid'''
         match command:
@@ -140,6 +145,35 @@ class SearchAgent(mesa.Agent):
         y2=center_y+5
         self.canvas.coords(self.oval, x1, y1, x2, y2) 
 
+    def mutate_genes(self):
+        """Mutate the genes"""
+        return NotImplementedError
 
+    def create_chromosone(self, initial_size):
+        """Create and return the genome"""
+        # use the A* to get a better "idea" of where target is
+        # for now be random
+        temp=list()
+        chrome_list = list(model.UUVModel.AGENT_CHROMESOME_COMMAND.keys())
+        for i in range(initial_size):
+            temp.append(self.random.choice(chrome_list))
+        return temp
+    
+    def mate(self):
+        """Mate and produces offspring"""
+        return NotImplementedError
+    
+    def calculate_fitness(self):
+        """Calulate the fitness score of this agent using manhatten distance"""
+        x1 = self.grid_index[0]
+        y1 = self.grid_index[1]
+        x2 = self.target_index[0]
+        y2 = self.target_index[1]
+        return  abs(x1-x2) + abs(y1-y2)
 
-
+    def increase_chromosone(self, amt_to_add):
+        """Add more genomes to the chromeosone"""
+        temp = list()
+        temp = self.create_chromosone(amt_to_add)
+        self.chromosone=self.chromosone + temp
+        self.commands = iter(self.chromosone)

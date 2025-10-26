@@ -1,7 +1,8 @@
 import tkinter as tk
 import numpy as np
 import pandas as pd
-import mesa
+import mesa 
+
 
 
 from . import agent, detector_agent, search_agent
@@ -68,15 +69,37 @@ class UUVModel(mesa.Model):
         for agent_type in self.all_agent_types:
             tmp_pos_list = self.population_position[agent_type]
             tmp_pop_count = self.population_count[agent_type]
-            for i in range(tmp_pop_count):
-                pos = tmp_pos_list[i]
-                print(f'CREATE AGENT->type: {agent_type}, pos: {pos}')
-                self.create_agent(type=agent_type, pos=pos)
+            if tmp_pop_count == 0:
+                continue
+            print(f"Current Agent is : {agent_type}")
+            if agent_type == "GA":
+                for i in range(tmp_pop_count):
+                    pos = tmp_pos_list[i]
+                    for _ in range(self.POP_SIZE):               
+                        self.create_agent(type=agent_type, pos=pos, group_id=i)
+                        print(f'CREATE AGENT->type: {agent_type}, pos: {pos}, group_id: {i}')
+            else:
+                for i in range(tmp_pop_count):
+                    pos = tmp_pos_list[i]
+                    print(f'CREATE AGENT->type: {agent_type}, pos: {pos}')
+                    self.create_agent(type=agent_type, pos=pos)
+
+        # Data cataloging
+        self.data_collecter = mesa.DataCollector(
+            agent_reporters={"Finnished_agent_count": "is_finnished"},
+            model_reporters={"Step": lambda self: self.steps, "Total Agents": lambda self: len(self.agents)}
+        )
+        self.score_GA()
+
 
 
     def step(self):
         """advance model by one step"""
         self.agents.do("step")
+        self.data_collecter.collect(self)
+        # print(self.data_collecter.get_agent_vars_dataframe().head)
+        print(self.data_collecter.get_model_vars_dataframe().head)
+        self.score_GA()
 
     def agent_registration(self, agent_instance, pos, type_name):
         '''Inital Agent registration'''
@@ -99,11 +122,18 @@ class UUVModel(mesa.Model):
         # print(self.population_count)
         # print(self.population_position)
 
-    def create_agent(self, type, pos):
+    def create_agent(self, type, pos, **parameters):
         '''creates the agents in the model'''
         # acces the instruciton keys
         agent_type = type
         spawn_pos = pos
+
+        # Additional parameters
+        extra_params = dict()
+        if parameters:
+            group_id = parameters["group_id"]
+            if group_id is not None:
+                extra_params["group_id"]=parameters["group_id"]
         
         AgentClass = self.AGENT_MAP.get(agent_type)
 
@@ -111,20 +141,35 @@ class UUVModel(mesa.Model):
             print(f"Error: Unknown agent type {agent_type}")
             return
 
-        # Prepare kwargs for the agent's constructor self, model, spawn, map, canvas, grid,
+        # Prepare kwargs for the agent's constructor self, model, spawn, map, canvas, grid,          
         agent_kwargs = {
             "model": self,
             "n" : 1,
             "spawn" : spawn_pos,
             "map" : self.map, 
             "canvas": self.canvas,
-            "grid": self.grid
+            "grid": self.grid,          
         }
-        # # Seeker agents need a 'target' parameter
-        # if agent_type == "Seeker":
-        #      agent_kwargs["target"] = instruction.get("target", self.targets[0]) # Use a default target if not provided
+        final_kwargs = {**agent_kwargs, **extra_params}
 
-        AgentClass.create_agents(**agent_kwargs)
+        AgentClass.create_agents(**final_kwargs)
+        
 
+    def create_GA_population(self, agent_type):
+        """Create a random genome for a population"""
+        return NotImplementedError
+    
+    def score_GA(self):
+        """Scores and orders the fitness fucntion"""
+        ga_class = self.AGENT_MAP.get('GA')
+        ga_agent_set = self.agents_by_type.get(ga_class)
+        if ga_agent_set:
+            ga_population = list(ga_agent_set)
+            ga_population = sorted(ga_population, key= lambda x:x.calculate_fitness())
+            for agent in ga_population:
+                # Call the method here as well to get the score
+                fitness_score = agent.calculate_fitness()
+                print(f"Agent ID: {agent.unique_id}, Fitness Score: {fitness_score}")
+            
 
 
