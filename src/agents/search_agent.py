@@ -60,6 +60,7 @@ class SearchAgent(mesa.Agent):
                 self.update_icon_pos()              
             else:
                 self.is_finnished = True
+                self.canvas.itemconfig(self.oval, fill="black")
                 return
             # print(f'pix pos: {self.pos_pixel}')
             # print(f'grid pos: {self.grid_index}')
