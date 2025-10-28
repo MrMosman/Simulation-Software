@@ -28,7 +28,7 @@ class SearchAgent(mesa.Agent):
 
 
         # Genetic Algo Vars
-        self.chromosone = self.create_chromosone(self.random.randint(1, 10))
+        self.chromosone = self.create_chromosone(self.random.randint(5, 10))
         self.commands = iter(self.chromosone)
         self.target = (17, 25) #remove hardcode later for 
         self.fitness = 0
@@ -36,6 +36,7 @@ class SearchAgent(mesa.Agent):
         self.next_command_num = 0
         self.is_finnished = False
         self.group_id = group_id
+        self.mutation_rate = 0.5 #get from the model hard cord for now
 
 
         # varibles
@@ -68,8 +69,7 @@ class SearchAgent(mesa.Agent):
             # print(f'manhatten: {self.calculate_fitness()}')
         else:
             self.is_finnished = True
-
-            
+       
     def get_next_pos(self, command):
         '''Return the next position and if valid'''
         match command:
@@ -147,9 +147,17 @@ class SearchAgent(mesa.Agent):
         y2=center_y+5
         self.canvas.coords(self.oval, x1, y1, x2, y2) 
 
-    def mutate_genes(self):
-        """Mutate the genes"""
-        return NotImplementedError
+    def mutate_genes(self, chromosone):
+        """Mutate the genes of the child"""
+        new_chromosone = list()
+        chrome_list = list(model.UUVModel.AGENT_CHROMESOME_COMMAND.keys())
+        for gene in chromosone:
+            prob = self.random.random()
+            if prob < self.mutation_rate:
+                new_chromosone.append(self.random.choice(chrome_list))
+            else:
+                new_chromosone.append(gene)
+        return new_chromosone
 
     def create_chromosone(self, initial_size):
         """Create and return the genome"""
@@ -161,9 +169,17 @@ class SearchAgent(mesa.Agent):
             temp.append(self.random.choice(chrome_list))
         return temp
     
-    def mate(self):
+    def mate(self, spouse):
         """Mate and produces offspring"""
-        return NotImplementedError
+        # create child chrome
+        child_chromosone = list()
+        my_chrome_midpoint = len(self.chromosone)//2
+        spouse_chrome_midpoint = len(spouse.chromosone)//2
+        child_chromosone = self.chromosone[:my_chrome_midpoint] + spouse.chromosone[spouse_chrome_midpoint:]
+
+        # mutate the poor thing
+        child_chromosone = self.mutate_genes(child_chromosone)
+        return child_chromosone
     
     def calculate_fitness(self):
         """Calulate the fitness score of this agent using manhatten distance"""

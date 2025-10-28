@@ -185,6 +185,12 @@ class UUVModel(mesa.Model):
                 # Call the method here as well to get the score
                 # print(f"Agent ID: {agent.unique_id}, Fitness Score: {agent.fitness}")
             
+            # breed the parents
+            dad=self.save_list[0]
+            mom=self.save_list[1]
+            for _ in range(self.POP_SIZE):
+                print(f"{_} child chromesone{dad.mate(mom)}")
+
             
 
 
