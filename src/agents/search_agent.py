@@ -24,7 +24,7 @@ class SearchAgent(mesa.Agent):
         self.grid = np.array(grid)
         self.ROW, self.COL = self.grid.shape
         self.grid = grid
-        self.target_index = [18, 26]
+        self.target_index = [0, 0]
 
 
         # Genetic Algo Vars
@@ -61,7 +61,6 @@ class SearchAgent(mesa.Agent):
             else:
                 self.is_finnished = True
                 self.canvas.itemconfig(self.oval, fill="black")
-                self.remove()
                 return
             # print(f'pix pos: {self.pos_pixel}')
             # print(f'grid pos: {self.grid_index}')
@@ -172,7 +171,8 @@ class SearchAgent(mesa.Agent):
         y1 = self.grid_index[1]
         x2 = self.target_index[0]
         y2 = self.target_index[1]
-        return  abs(x1-x2) + abs(y1-y2)
+        self.fitness = abs(x1-x2) + abs(y1-y2)
+        return  self.fitness
 
     def increase_chromosone(self, amt_to_add):
         """Add more genomes to the chromeosone"""
@@ -180,3 +180,10 @@ class SearchAgent(mesa.Agent):
         temp = self.create_chromosone(amt_to_add)
         self.chromosone=self.chromosone + temp
         self.commands = iter(self.chromosone)
+
+    def kil_your_self_now(self):
+        """Will kill the agent NOW, it serves zero purpose. kys"""
+        # remove itself from the screen
+        self.canvas.delete(self.oval)
+        # kill the agent in model
+        self.remove()

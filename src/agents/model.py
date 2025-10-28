@@ -64,7 +64,8 @@ class UUVModel(mesa.Model):
 
         # Process the spawn data
         self.process_spawn_data(spawns=spawns)
-        
+        self.save_list = list()
+
         # #create agents
         for agent_type in self.all_agent_types:
             tmp_pos_list = self.population_position[agent_type]
@@ -89,7 +90,6 @@ class UUVModel(mesa.Model):
             agent_reporters={"Finnished_agent_count": "is_finnished"},
             model_reporters={"Step": lambda self: self.steps, "Total Agents": lambda self: len(self.agents)}
         )
-        self.score_GA()
 
     def step(self):
         """advance model by one step"""
@@ -177,11 +177,14 @@ class UUVModel(mesa.Model):
         ga_agent_set = self.agents_by_type.get(ga_class)
         if ga_agent_set:
             ga_population = list(ga_agent_set)
-            ga_population = sorted(ga_population, key= lambda x:x.calculate_fitness())
-            for agent in ga_population:
+            ga_population = sorted(ga_population, key= lambda x:x.calculate_fitness(), reverse=False)
+            # DEBUG
+            self.save_list = ga_population[:2] #get best
+            for agent in ga_population[2:]:
+                agent.kil_your_self_now()
                 # Call the method here as well to get the score
-                fitness_score = agent.calculate_fitness()
-                print(f"Agent ID: {agent.unique_id}, Fitness Score: {fitness_score}")
+                # print(f"Agent ID: {agent.unique_id}, Fitness Score: {agent.fitness}")
+            
             
 
 
