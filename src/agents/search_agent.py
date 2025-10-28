@@ -61,6 +61,7 @@ class SearchAgent(mesa.Agent):
             else:
                 self.is_finnished = True
                 self.canvas.itemconfig(self.oval, fill="black")
+                self.remove()
                 return
             # print(f'pix pos: {self.pos_pixel}')
             # print(f'grid pos: {self.grid_index}')
@@ -68,6 +69,7 @@ class SearchAgent(mesa.Agent):
             # print(f'manhatten: {self.calculate_fitness()}')
         else:
             self.is_finnished = True
+
             
     def get_next_pos(self, command):
         '''Return the next position and if valid'''

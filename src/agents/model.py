@@ -85,21 +85,33 @@ class UUVModel(mesa.Model):
                     self.create_agent(type=agent_type, pos=pos)
 
         # Data cataloging
-        self.data_collecter = mesa.DataCollector(
+        self.data_collector = mesa.DataCollector(
             agent_reporters={"Finnished_agent_count": "is_finnished"},
             model_reporters={"Step": lambda self: self.steps, "Total Agents": lambda self: len(self.agents)}
         )
         self.score_GA()
 
-
-
     def step(self):
         """advance model by one step"""
         self.agents.do("step")
-        self.data_collecter.collect(self)
-        # print(self.data_collecter.get_agent_vars_dataframe().head)
-        print(self.data_collecter.get_model_vars_dataframe().head)
-        self.score_GA()
+        self.data_collector.collect(self)
+
+        # retrive data from datacollecter
+        raw_agent_data = self.data_collector.get_agent_vars_dataframe()
+        raw_model_data = self.data_collector.get_model_vars_dataframe()
+        finished_count = 0
+        if not raw_agent_data.empty and not raw_model_data.empty:
+            # get agent data
+            current_step = raw_agent_data.index.get_level_values('Step').max() # get the max of the Step
+            is_finnsihed_step = raw_agent_data.xs(current_step, level="Step")['Finnished_agent_count'] # get the cross section of the newest step and Step
+            finished_count = is_finnsihed_step.sum() #return a sum of how many agents have finnished
+            print(f"Finished agents at step {current_step}: {finished_count}")
+       
+        if finished_count == len(self.agents):
+            # add the losers to a kill list to remove later
+            # self.remove_all_agents()
+            print(len(self.agents))
+            self.score_GA()
 
     def agent_registration(self, agent_instance, pos, type_name):
         '''Inital Agent registration'''
