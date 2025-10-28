@@ -65,25 +65,11 @@ class UUVModel(mesa.Model):
         # Process the spawn data
         self.process_spawn_data(spawns=spawns)
         self.save_list = list()
+        self.current_generation = 0
+        self.child_chromosones = list()
 
         # #create agents
-        for agent_type in self.all_agent_types:
-            tmp_pos_list = self.population_position[agent_type]
-            tmp_pop_count = self.population_count[agent_type]
-            if tmp_pop_count == 0:
-                continue
-            print(f"Current Agent is : {agent_type}")
-            if agent_type == "GA":
-                for i in range(tmp_pop_count):
-                    pos = tmp_pos_list[i]
-                    for _ in range(self.POP_SIZE):               
-                        self.create_agent(type=agent_type, pos=pos, group_id=i)
-                        print(f'CREATE AGENT->type: {agent_type}, pos: {pos}, group_id: {i}')
-            else:
-                for i in range(tmp_pop_count):
-                    pos = tmp_pos_list[i]
-                    print(f'CREATE AGENT->type: {agent_type}, pos: {pos}')
-                    self.create_agent(type=agent_type, pos=pos)
+        self.create_initial_population()
 
         # Data cataloging
         self.data_collector = mesa.DataCollector(
@@ -110,8 +96,12 @@ class UUVModel(mesa.Model):
         if finished_count == len(self.agents):
             # add the losers to a kill list to remove later
             # self.remove_all_agents()
-            print(len(self.agents))
+            # print(len(self.agents))
+            self.current_generation+=1
             self.score_GA()
+            self.create_next_generation(agent_type="GA")
+            # self.create_population()
+
 
     def agent_registration(self, agent_instance, pos, type_name):
         '''Inital Agent registration'''
@@ -145,10 +135,17 @@ class UUVModel(mesa.Model):
         if parameters:
             group_id = parameters["group_id"]
             if group_id is not None:
-                extra_params["group_id"]=parameters["group_id"]
+                extra_params["group_id"]=group_id
+
+            current_gen = parameters["gen"]
+            if current_gen is not None:
+                extra_params["generation"]=current_gen
+
+            chromosone = parameters["chromosone"]
+            if chromosone is not None:
+                extra_params["chromosone"]=chromosone
         
         AgentClass = self.AGENT_MAP.get(agent_type)
-
         if not AgentClass:
             print(f"Error: Unknown agent type {agent_type}")
             return
@@ -165,11 +162,6 @@ class UUVModel(mesa.Model):
         final_kwargs = {**agent_kwargs, **extra_params}
 
         AgentClass.create_agents(**final_kwargs)
-        
-
-    def create_GA_population(self, agent_type):
-        """Create a random genome for a population"""
-        return NotImplementedError
     
     def score_GA(self):
         """Scores and orders the fitness fucntion"""
@@ -181,16 +173,52 @@ class UUVModel(mesa.Model):
             # DEBUG
             self.save_list = ga_population[:2] #get best
             for agent in ga_population[2:]:
-                agent.kil_your_self_now()
+                agent.kill_your_self_now()
                 # Call the method here as well to get the score
                 # print(f"Agent ID: {agent.unique_id}, Fitness Score: {agent.fitness}")
             
             # breed the parents
+            child_chromosones = list()
             dad=self.save_list[0]
             mom=self.save_list[1]
-            for _ in range(self.POP_SIZE):
-                print(f"{_} child chromesone{dad.mate(mom)}")
-
+            child_chromosones.append(dad.chromosone)
+            child_chromosones.append(mom.chromosone)
+            for _ in range(self.POP_SIZE-2): #subtract 2 for the parents
+                child_chromosones.append(dad.mate(mom))
+                # print(f"{_} child chromesone{dad.mate(mom)}")
+            dad.kill_your_self_now()
+            mom.kill_your_self_now()
+            self.save_list.clear()
+            self.child_chromosones=child_chromosones
             
+    def create_initial_population(self):
+         """Create the intial populations for the model use only onec"""
+         for agent_type in self.all_agent_types:
+            tmp_pos_list = self.population_position[agent_type]
+            tmp_pop_count = self.population_count[agent_type]
+            if tmp_pop_count == 0:
+                continue
+            print(f"Current Agent is : {agent_type}")
+            if agent_type == "GA":
+                for i in range(tmp_pop_count):
+                    pos = tmp_pos_list[i]
+                    for _ in range(self.POP_SIZE):               
+                        self.create_agent(type=agent_type, pos=pos, group_id=i, gen=self.current_generation, chromosone=0)
+                        print(f'CREATE AGENT->type: {agent_type}, pos: {pos}, group_id: {i}')            
+            else:
+                for i in range(tmp_pop_count):
+                    pos = tmp_pos_list[i]
+                    print(f'CREATE AGENT->type: {agent_type}, pos: {pos}')
+                    self.create_agent(type=agent_type, pos=pos)
+
+    def create_next_generation(self, agent_type):
+        
+        tmp_pos_list = self.population_position[agent_type]
+        tmp_pop_count = self.population_count[agent_type]
+        for i in range(tmp_pop_count):
+            pos = tmp_pos_list[i]
+            for _ in range(self.POP_SIZE):               
+                self.create_agent(type=agent_type, pos=pos, group_id=i, gen=self.current_generation, chromosone=self.child_chromosones[_])
+                print(f'CREATE AGENT->type: {agent_type}, pos: {pos}, group_id: {i}')  
 
 

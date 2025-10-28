@@ -194,7 +194,7 @@ class App(tk.Tk):
     def animate(self):
         '''animate the screen'''
         if self.is_running and self.mesa_model is not None:
-            self.animation_job = self.after(1000, self.animate)
+            self.animation_job = self.after(50, self.animate)
             self.mesa_model.step()
             # step through the model
         else:

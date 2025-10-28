@@ -14,7 +14,7 @@ from . import model
 class SearchAgent(mesa.Agent):
     '''Search Agent for GA'''
     # keep in mind that the spawns pos(x,y) are flipped
-    def __init__(self,model, spawn, map, canvas, grid, group_id, *args, **kwargs):
+    def __init__(self,model, spawn, map, canvas, grid, group_id, generation, chromosone, *args, **kwargs):
         super().__init__(model, *args, **kwargs)
         # Target and spawn
         
@@ -28,9 +28,15 @@ class SearchAgent(mesa.Agent):
 
 
         # Genetic Algo Vars
-        self.chromosone = self.create_chromosone(self.random.randint(5, 10))
+        self.generation = generation
+        self.chromosone = list()
+        if generation is 0:
+            self.chromosone = self.create_chromosone(self.random.randint(10, 30))
+        else:
+            self.chromosone = chromosone
+
         self.commands = iter(self.chromosone)
-        self.target = (17, 25) #remove hardcode later for 
+        self.target = (0, 0) #remove hardcode later for 
         self.fitness = 0
         self.is_failed = False
         self.next_command_num = 0
@@ -62,6 +68,9 @@ class SearchAgent(mesa.Agent):
             else:
                 self.is_finnished = True
                 self.canvas.itemconfig(self.oval, fill="black")
+                self.chromosone = self.chromosone + self.create_chromosone(5) #add 5 new random moves
+                self.commands = iter(self.chromosone)
+                self.next_command_num = 0
                 return
             # print(f'pix pos: {self.pos_pixel}')
             # print(f'grid pos: {self.grid_index}')
@@ -197,7 +206,7 @@ class SearchAgent(mesa.Agent):
         self.chromosone=self.chromosone + temp
         self.commands = iter(self.chromosone)
 
-    def kil_your_self_now(self):
+    def kill_your_self_now(self):
         """Will kill the agent NOW, it serves zero purpose. kys"""
         # remove itself from the screen
         self.canvas.delete(self.oval)
