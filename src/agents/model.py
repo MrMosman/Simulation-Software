@@ -98,6 +98,7 @@ class UUVModel(mesa.Model):
             # self.remove_all_agents()
             # print(len(self.agents))
             self.current_generation+=1
+            print(f"Current Generation: {self.current_generation}")
             self.score_GA()
             self.create_next_generation(agent_type="GA")
             # self.create_population()

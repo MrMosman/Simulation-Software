@@ -59,19 +59,20 @@ class SearchAgent(mesa.Agent):
 
     def step(self):
         '''Called by the Mesa Model'''
-        if not self.is_failed or not self.is_finnished:
-            if self.next_command_num < len(self.chromosone):
-                next_command = next(self.commands)
-                self.next_command_num +=1
-                self.get_next_pos(next_command)
-                self.update_icon_pos()              
-            else:
-                self.is_finnished = True
-                self.canvas.itemconfig(self.oval, fill="black")
-                self.chromosone = self.chromosone + self.create_chromosone(5) #add 5 new random moves
-                self.commands = iter(self.chromosone)
-                self.next_command_num = 0
-                return
+        if not self.is_failed:
+            if not self.is_finnished:
+                if self.next_command_num < len(self.chromosone):
+                    next_command = next(self.commands)
+                    self.next_command_num +=1
+                    self.get_next_pos(next_command)
+                    self.update_icon_pos()              
+                else:
+                    self.is_finnished = True
+                    self.canvas.itemconfig(self.oval, fill="black")
+                    self.chromosone = self.chromosone + self.create_chromosone(5) #add 5 new random moves
+                    self.commands = iter(self.chromosone)
+                    self.next_command_num = 0
+                    return
             # print(f'pix pos: {self.pos_pixel}')
             # print(f'grid pos: {self.grid_index}')
             # print(f'failed: {self.is_failed}')
@@ -197,6 +198,8 @@ class SearchAgent(mesa.Agent):
         x2 = self.target_index[0]
         y2 = self.target_index[1]
         self.fitness = abs(x1-x2) + abs(y1-y2)
+        if self.is_failed is True:
+            self.fitness * 30
         return  self.fitness
 
     def increase_chromosone(self, amt_to_add):
