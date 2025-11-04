@@ -72,17 +72,21 @@ class App(tk.Tk):
         #sub-menu buttons
         self.file_button = tk.Button(self.file_section, text="Select", command=self.select_file, bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised")
         self.start_button = tk.Button(self.sub_sim_section, text="▶ Start", command=self.on_start_click, bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised")
-        self.reset_sim_button = tk.Button(self.sub_sim_section, text="Reset", command= lambda: self.reset_simulation(), bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised")
+        self.reset_sim_button = tk.Button(self.sub_sim_section, text="🔄 Reset", command= lambda: self.reset_simulation(), bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised")
         self.exit_sim_button = tk.Button(self.sub_sim_section, text="Exit", command=self.destroy, bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised")
+        self.analysis_button = tk.Button(self.sub_sim_section, text="⛶ Analysis", bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised", command=lambda: print("Popup - WIP"))
         self.file_button.pack(side='top', pady=4)
         self.start_button.grid(row=0, column=0, padx=10, pady=5)
         self.reset_sim_button.grid(row=0, column=1, padx=10, pady=5)
-        self.exit_sim_button.grid(row=1, column=0, columnspan=2, padx=10, pady=5, sticky="ew")
+        self.exit_sim_button.grid(row=1, column=0, padx=10, pady=5, sticky="ew")
+        self.analysis_button.grid(row=1, column=1, padx=10, pady=5)
         self.save_button = tk.Button(self.sub_config_section, text="Save Config", bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised", command=lambda: print("Save config - WIP"))
         self.load_button = tk.Button(self.sub_config_section, text="Load Config", bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised", command=lambda: print("Load config - WIP"))
+        
         self.save_button.grid(row=0, column=0, padx=10, pady=5)
         self.load_button.grid(row=0, column=1, padx=10, pady=5)
-
+        
+        
         # labels in menus
         self.uuv_info_label = tk.Label(self.file_menu, text="Seekers: 0", font=("Arial", 11), anchor="w", justify="left")
         self.uuv_info_label.pack(fill="x", padx=10, pady=2)
@@ -142,54 +146,101 @@ class App(tk.Tk):
         self.canvas.unbind("<Button-1>")
 
     def on_start_click(self):
-        '''Start the simulation and create the mesa_model'''
+        """Start / pause the simulation and create the mesa_model safely."""
         self.can_spawn = False
-        if self.is_running is False:
+        if not self.is_running:
+            # Ensure canvas not bound to spawning
             self.canvas.unbind("<Button-1>")
-            self.start_button.config(state="normal", bg="#333333", text="⏸ Running...", fg="white", command=self.on_start_click) 
-            if self.mesa_model is None:
-                if self.map_grid is None:
-                    tk.messagebox.showerror("Error", "Please load a map before starting the simulation.")
-                    self.start_button.config(state="normal", bg="#333333", text="▶ Start", fg="white", command=self.on_start_click)
-                    return
-                # addationl parameters here
-                # create the mesa_model here
+            # Provide immediate UI feedback
+            self.start_button.config(state="disabled", bg="#333333", text="⏳ Starting...")
+
+            # If there's an existing model, clear it first
+            if self.mesa_model is not None:
+                if hasattr(self.mesa_model, "clear_agents"):
+                    try:
+                        self.mesa_model.clear_agents()
+                    except Exception as e:
+                        print("Warning clearing existing model:", e)
+                self.mesa_model = None
+
+            # Validate map/grid preconditions
+            if self.map_grid is None:
+                tk.messagebox.showerror("Error", "Please load a map before starting the simulation.")
+                self.start_button.config(state="normal", bg="#333333", text="▶ Start", command=self.on_start_click)
+                return
+
+            # Create the model
+            try:
                 self.mesa_model = model.UUVModel(
-                    spawns=self.spawn_data, 
-                    map=self.current_map, 
+                    spawns=self.spawn_data,
+                    map=self.current_map,
                     grid=self.map_grid,
                     canvas=self.canvas
-                    )
+                )
+            except Exception as e:
+                tk.messagebox.showerror("Error creating model", f"Failed to create simulation model:\n{e}")
+                # restore button state
+                self.mesa_model = None
+                self.start_button.config(state="normal", bg="#333333", text="▶ Start", command=self.on_start_click)
+                return
+
+            # Start the animation loop
             self.is_running = True
+            # Switch Start button to a Pause / Running state
+            self.start_button.config(state="normal", bg="#333333", text="⏸ Running...", command=self.on_start_click)
             self.animate()
+
         else:
+            # We are running -> pause/stop
             if self.animation_job:
-                self.after_cancel(self.animation_job)
+                try:
+                    self.after_cancel(self.animation_job)
+                except Exception:
+                    pass
                 self.animation_job = None
-            self.start_button.config(state="normal", bg="#333333", text="▶ Start", fg="white", command=self.on_start_click)
+            self.start_button.config(state="normal", bg="#333333", text="▶ Start", command=self.on_start_click)
             self.canvas_frame.config(bg="#333333")
             self.is_running = False
     
     def reset_simulation(self):
-        '''WORK IN PROGRESS'''
-        for item in self.canvas.find_all():
-            tags = self.canvas.gettags(item)
-            if "agent" in tags or "target" in tags or self.canvas.itemcget(item, "fill") in ["orange", "blue"]:
-                self.canvas.delete(item)
+        """Fully stop and clear the running simulation and UI state."""
+        # 1) Stop animation
         if self.animation_job:
-            self.after_cancel(self.animation_job)
+            try:
+                self.after_cancel(self.animation_job)
+            except Exception:
+                pass
             self.animation_job = None
         self.is_running = False
+
+        # 2) If model exists, try to clear it
+        if self.mesa_model is not None:
+            if hasattr(self.mesa_model, "clear_agents"):
+                try:
+                    self.mesa_model.clear_agents()
+                except Exception as e:
+                    print("Warning: error while clearing model:", e)
+            # drop reference so nothing calls it again
+            self.mesa_model = None
+
+        # 3) Clear related canvas items
+        for item in self.canvas.find_all():
+            tags = self.canvas.gettags(item)
+            if "agent" in tags or "target" in tags or "setup_marker" in tags or "hover_rect" in tags or "detector" in tags or "search" in tags:
+                self.canvas.delete(item)
+
+        # 4) Clear GUI lists and spawn instructions
         self.agent_menu.agent_listbox.delete(0, tk.END)
+        self.agent_menu.agent_display_data.clear()
+        for agent_type in self.spawn_data:
+            self.spawn_data[agent_type] = []
+
+        # 5) Reset labels / buttons
         self.uuv_info_label.config(text="Seekers: 0")
         self.target_info_label.config(text="Targets: 0")
         self.coord_label.config(text="Grid Position: (x, y) | [lat, lon]")
         self.start_button.config(state="normal", bg="#333333", text="▶ Start", fg="white", command=self.on_start_click)
         self.canvas_frame.config(bg="#333333")
-        #Added to wipe agent spawn data on reset
-        for agent_type in self.spawn_data:
-            self.spawn_data[agent_type] = []
-            self.agent_menu.agent_display_data.clear()
 
     def animate(self):
         '''animate the screen'''
@@ -327,6 +378,11 @@ class AgentMenu(tk.Frame):
         self.agent_listbox.pack(side='left', fill='y', padx=(0, 2))
         self.scrollbar.pack(side='right', fill='y')
 
+        #Scroll Bar Double click functionality
+        self.agent_listbox_keys = [] #map listbox indices to keys for easier parsing
+        self.agent_listbox.bind('<Double-3>',self._on_listbox_rdouble_click)
+        self.agent_listbox.bind('<Double-1>',self._on_listbox_double_click)
+        
         # Store reference to parent for callbacks
         self.parent = parent
 
@@ -337,6 +393,7 @@ class AgentMenu(tk.Frame):
     def update_agent_listbox(self):
         """Refresh the agent Listbox with current agent data."""
         self.agent_listbox.delete(0, tk.END)
+        self.agent_listbox_keys = []
         # Set fixed widths for each column
         name_width = 12
         type_width = 10
@@ -345,6 +402,7 @@ class AgentMenu(tk.Frame):
             # Format each entry with fixed width columns
             entry = f"{name:<{name_width}} {agent_type:<{type_width}} {count:>{count_width}}"
             self.agent_listbox.insert(tk.END, entry)
+            self.agent_listbox_keys.append((name, agent_type))
     #Moved from App class
     def add_agent_to_display(self, name, agent_type):
         """Add or update agent in the display dictionary."""
@@ -354,6 +412,77 @@ class AgentMenu(tk.Frame):
         else:
             self.agent_display_data[key] = 1
         self.update_agent_listbox()
+
+    def _on_listbox_double_click(self, event):
+        """Left button double click handler. Used to wipe selected agent via listbox"""
+        try:
+            idx = self.agent_listbox.nearest(event.y)
+        except Exception:
+            idx = None
+        if idx is None:
+            return
+        # Ensure the index is valid
+        if idx < 0 or idx >= len(self.agent_listbox_keys):
+            return
+        self.agent_listbox.selection_clear(0, tk.END)
+        self.agent_listbox.selection_set(idx)
+        name, agent_type = self.agent_listbox_keys[idx]
+
+    def _on_listbox_rdouble_click(self, event):
+        """Right-button double-click handler. Determine clicked index from event and open popup."""
+        try:
+            idx = self.agent_listbox.nearest(event.y)
+        except Exception:
+            idx = None
+        if idx is None:
+            return
+        # Ensure the index is valid
+        if idx < 0 or idx >= len(self.agent_listbox_keys):
+            return
+        # Make the clicked item the active/selected one (so UI shows selection)
+        self.agent_listbox.selection_clear(0, tk.END)
+        self.agent_listbox.selection_set(idx)
+        name, agent_type = self.agent_listbox_keys[idx]
+        count = self.agent_display_data.get((name, agent_type), 0)
+        self._open_agent_detail_popup(name, agent_type, count)
+
+    def _open_agent_detail_popup(self, name, agent_type, count):
+        """Opens a popup window showing agent details (positions)."""
+        popup = tk.Toplevel(self)
+        popup.transient(self)
+        popup.title(f"Agent Details")
+        popup.resizable(False, False)
+        popup.attributes('-topmost', True)
+
+        header = tk.Label(popup, text=f"{name} — {agent_type.title()} (count: {count})", font=("Consolas", 12, "bold"))
+        header.pack(fill='x', padx=8, pady=(8,4))
+
+        frame = tk.Frame(popup)
+        frame.pack(fill='both', expand=True, padx=8, pady=(0,8))
+
+        positions = self._get_positions_from_spawn_data(name, agent_type)
+        if not positions:
+            msg = tk.Label(frame, text="No positions found.", font=("Consolas", 11))
+            msg.pack(anchor='w')
+        else:
+            for i, pos in enumerate(positions, start=1):
+                pos_label = tk.Label(frame, text=f"{i}. {pos}", font=("Consolas", 11), anchor='w', justify='left')
+                pos_label.pack(anchor='w')
+        btn = tk.Button(popup, text="Close", command=popup.destroy, bg="#333333", fg="white", width=10, height=1, font=("Consolas", 12), relief="raised")
+        btn.pack(pady=(0,8), padx=(0,8), anchor="se")
+
+    def _get_positions_from_spawn_data(self, name, agent_type):
+        positions = []
+        spawn_dict = getattr(self.parent, "spawn_data", {})
+        key_type = agent_type
+        for t, spawn_list in spawn_dict.items():
+            if str(t).lower() != str(key_type).lower():
+                continue
+            for spawn in spawn_list:
+                spawn_name = spawn.get("name") or ""
+                if spawn_name == name:
+                    positions.append(spawn.get("pos"))
+        return positions
 
 class UAVSelectWindow(tk.Toplevel):
     '''UAV selecting popup window'''
@@ -473,6 +602,7 @@ class UAVSelectWindow(tk.Toplevel):
             'pos': grid_pos,
             'name': agent_name
             }
+        
 
         if agent_type in self.parent.spawn_data:
             self.parent.spawn_data[agent_type].append(new_agent_data)
@@ -486,9 +616,10 @@ class UAVSelectWindow(tk.Toplevel):
 
         # DEBUG REMOVE
         # print(self.selected_agent_type.get())
-        self.draw_spawn_marker(snap_x, snap_y, 'green')
-        # print(f"Placed {agent_type} '{agent_name}' at grid {grid_pos} with data: {new_agent_data}")
-  
+        marker_id = self.draw_spawn_marker(snap_x, snap_y, 'green')
+        new_agent_data['marker_id'] = marker_id
+        print(f"Placed {agent_type} '{agent_name}' at grid {grid_pos} with data: {new_agent_data}")
+
     def stop_spawning(self):
         '''disable spawning'''
         self.spawning_state.set(False)
@@ -506,8 +637,9 @@ class UAVSelectWindow(tk.Toplevel):
     def draw_spawn_marker(self, x, y, color):
         """Draws a marker circle on the canvas for user feedback."""
         radius = 5
-        self.canvas.create_oval(
+        item_id = self.canvas.create_oval(
             x - radius, y - radius, 
             x + radius, y + radius, 
             fill=color, tags=("setup_marker")
         )
+        return item_id

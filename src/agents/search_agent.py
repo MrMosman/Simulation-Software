@@ -178,3 +178,14 @@ class SearchAgent(mesa.Agent):
         temp = self.create_chromosone(amt_to_add)
         self.chromosone=self.chromosone + temp
         self.commands = iter(self.chromosone)
+        
+    def cleanup(self):
+        """Remove this agent's canvas items (oval)."""
+        try:
+            if hasattr(self, "oval") and self.oval is not None:
+                try:
+                    self.canvas.delete(self.oval)
+                except Exception:
+                    pass
+        except Exception:
+            pass

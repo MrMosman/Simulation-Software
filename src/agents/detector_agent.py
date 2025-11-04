@@ -33,3 +33,23 @@ class DetectorAgent(mesa.Agent):
 
     def step(self):
         print("i have spawned")
+
+    def cleanup(self):
+        """Remove this agent's canvas items (oval and detection radius)."""
+        try:
+            if hasattr(self, "oval") and self.oval is not None:
+                try:
+                    self.canvas.delete(self.oval)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        try:
+            if hasattr(self, "radius_oval") and self.radius_oval is not None:
+                try:
+                    self.canvas.delete(self.radius_oval)
+                except Exception:
+                    pass
+        except Exception:
+            pass

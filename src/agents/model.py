@@ -85,7 +85,7 @@ class UUVModel(mesa.Model):
                     self.create_agent(type=agent_type, pos=pos)
 
         # Data cataloging
-        self.data_collecter = mesa.DataCollector(
+        self.data_collector = mesa.DataCollector(
             agent_reporters={"Finnished_agent_count": "is_finnished"},
             model_reporters={"Step": lambda self: self.steps, "Total Agents": lambda self: len(self.agents)}
         )
@@ -96,9 +96,9 @@ class UUVModel(mesa.Model):
     def step(self):
         """advance model by one step"""
         self.agents.do("step")
-        self.data_collecter.collect(self)
-        # print(self.data_collecter.get_agent_vars_dataframe().head)
-        print(self.data_collecter.get_model_vars_dataframe().head)
+        self.data_collector.collect(self)
+        # print(self.data_collector.get_agent_vars_dataframe().head)
+        print(self.data_collector.get_model_vars_dataframe().head)
         self.score_GA()
 
     def agent_registration(self, agent_instance, pos, type_name):
@@ -171,5 +171,96 @@ class UUVModel(mesa.Model):
                 fitness_score = agent.calculate_fitness()
                 print(f"Agent ID: {agent.unique_id}, Fitness Score: {fitness_score}")
             
+    def clear_agents(self):
+        """Remove agents and clear model bookkeeping so the model can be discarded."""
+        # 0) Defensive: try to iterate existing agents first and let them clean up
+        try:
+            agents_snapshot = []
+            if hasattr(self, "agents"):
+                # attempt to get an iterable snapshot of agents
+                try:
+                    agents_snapshot = list(self.agents)
+                except Exception:
+                    # fallback: some containers expose _agents dict
+                    if hasattr(self.agents, "_agents"):
+                        try:
+                            agents_snapshot = list(self.agents._agents.values())
+                        except Exception:
+                            agents_snapshot = []
+            # let agents perform their cleanup and remove their canvas items if present
+            for a in agents_snapshot:
+                try:
+                    if hasattr(a, "cleanup"):
+                        try:
+                            a.cleanup()
+                        except Exception:
+                            pass
+                    # remove agent's canvas oval if stored on the agent and model has a canvas
+                    if hasattr(a, "oval") and hasattr(self, "canvas") and self.canvas is not None:
+                        try:
+                            self.canvas.delete(a.oval)
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
+        # 1) Clear scheduler/agent container if present
+        try:
+            if hasattr(self, "agents"):
+                try:
+                    self.agents.clear()
+                except Exception:
+                    # fallback for different AgentBuffer implementations
+                    if hasattr(self.agents, "_agents"):
+                        try:
+                            self.agents._agents.clear()
+                        except Exception:
+                            pass
+            if hasattr(self, "schedule"):
+                try:
+                    if hasattr(self.schedule, "_agents"):
+                        self.schedule._agents.clear()
+                    elif hasattr(self.schedule, "agents"):
+                        self.schedule.agents.clear()
+                except Exception:
+                    pass
+            # also clear any 'agents_by_type' mapping if present
+            if hasattr(self, "agents_by_type"):
+                try:
+                    self.agents_by_type.clear()
+                except Exception:
+                    pass
+        except Exception:
+            print("Warning: could not fully clear schedule/agents container")
 
+        # 2) Clear grid backing (if any)
+        try:
+            if hasattr(self, "grid"):
+                if hasattr(self.grid, "_grid"):
+                    try:
+                        self.grid._grid.clear()
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+        # 3) Reset population bookkeeping
+        try:
+            if hasattr(self, "population_count"):
+                for k in list(self.population_count.keys()):
+                    self.population_count[k] = 0
+            if hasattr(self, "population_position"):
+                for k in list(self.population_position.keys()):
+                    self.population_position[k] = []
+        except Exception:
+            pass
+
+        # 4) Clear data collector (match attribute name used in __init__)
+        try:
+            # use the attribute name you actually assigned in __init__
+            if hasattr(self, "data_collector"):
+                self.data_collector = None
+        except Exception:
+            pass
