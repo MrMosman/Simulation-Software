@@ -26,6 +26,7 @@ class App(tk.Tk):
         self.is_running = False
         self.animation_job = None
         self.can_spawn = False
+        self.cell_count = 100
 
         # Handle spawn position data
         # dont change this unless you tell me
@@ -137,7 +138,7 @@ class App(tk.Tk):
             shallow_color=self.map_shallow_color,
             deep_color=self.map_deep_color
         )
-        self.map_grid = Grid(width=self.canvas_size[0], height=self.canvas_size[1], cells_n=50, canvas=self.canvas)
+        self.map_grid = Grid(width=self.canvas_size[0], height=self.canvas_size[1], cells_n=self.cell_count, canvas=self.canvas)
         self.canvas.config(background="#0A7005")
         self.canvas.unbind("<Button-1>")
 
