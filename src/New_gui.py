@@ -7,6 +7,7 @@ from grid import Grid
 from map import MapControl
 from agents import model
 
+# go through and fix all the button bindings as they are over righting each other
 class App(tk.Tk):
     def __init__(self, title, size, parent_dir):
         # main setup
@@ -27,6 +28,11 @@ class App(tk.Tk):
         self.animation_job = None
         self.can_spawn = False
         self.cell_count = 100
+
+        # varibles for selection
+        self.mouse_start_x = 0
+        self.mouse_start_y = 0
+        self.can_select = False
 
         # Handle spawn position data
         # dont change this unless you tell me
@@ -140,7 +146,7 @@ class App(tk.Tk):
         )
         self.map_grid = Grid(width=self.canvas_size[0], height=self.canvas_size[1], cells_n=self.cell_count, canvas=self.canvas)
         self.canvas.config(background="#0A7005")
-        self.canvas.unbind("<Button-1>")
+        # self.canvas.unbind("<Button-1>")
 
     def on_start_click(self):
         '''Start the simulation and create the mesa_model'''
@@ -247,7 +253,6 @@ class App(tk.Tk):
         y2 = y1 + grid_size
         self.canvas.create_rectangle(x1, y1, x2, y2, outline="white", width=2, tags="hover_rect")
 
-
 class Menu(tk.Frame):
     """Handles the menu for the UAV Agents"""
     def __init__(self, parent, size, color):
@@ -269,17 +274,41 @@ class CanvasFrame(tk.Frame):
     def __init__(self, parent, size):
         super().__init__(parent, background='#333333', width=size[0], height=size[1], relief="raised", border=5)
         self.padding = 5
+        self.parent = parent
         self.width = size[0]
         self.height = size[1]
         self.pack(side='left', padx=self.padding, pady=self.padding)
         self.pack_propagate(False)
 
+    def enable_grid_select(self):
+        self.parent.can_select = True
+        self.parent.can_spawn = False
+        
 class CanvasMap(tk.Canvas):
     '''Handles the physcal canvas to draw on for simulation'''
     def __init__(self, parent, size):
         super().__init__(background="#040404", master=parent, width=size[0], height=size[1])
         self.pack()
+        self.parent = parent
         self.pack_propagate(False)
+        self.start_x=0
+        self.start_y=0
+        self.end_x=0
+        self.end_y=0
+
+        self.bind("<Button-1>", self.get_start_xy) #first press
+        self.bind("<ButtonRelease-1>", self.get_end_xy) #release
+
+    def get_start_xy(self, event): 
+        """Get the coords for start x and start y"""
+        # (start x, start y, end x, end y)
+        self.start_x, self.start_y = event.x, event.y
+
+    def get_end_xy(self, event):
+        """Get the coords for the end x and end y"""
+        self.end_x, self.end_y = event.x, event.y
+        # if self.parent.parent.can_spawn == False:
+        self.create_rectangle(self.start_x, self.start_y, self.end_x, self.end_y, fill="blue", outline="red", width=2, tags="grid_select")
 
 class GeneralFrames(tk.Frame):
     '''general frames in the menus'''
@@ -495,7 +524,7 @@ class UAVSelectWindow(tk.Toplevel):
         self.spawning_state.set(False)
         self.spawn_btn.config(text="Spawn", state="normal")
         self.stop_btn.config(state="disabled")
-        self.canvas.unbind("<Button-1>")
+        # self.canvas.unbind("<Button-1>")
         self.parent.can_spawn = False
 
     def close_popup(self):
