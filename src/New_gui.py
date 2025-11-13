@@ -100,6 +100,9 @@ class App(tk.Tk):
         self.coord_label = tk.Label(self.file_menu, text="Grid Position: (x, y) | [lat, lon]", font=("Arial", 11), anchor="w")
         self.coord_label.pack(fill="x", padx=10, pady=2)
 
+        #TESTING FOR GRID SELECTION ADD SOMEWHERE LATER
+        self.grid_button = tk.Button(self.file_menu, text="Select Grid", font=("Arial", 11), anchor="w", justify="left", command=lambda: self.select_grid_button())
+        self.grid_button.pack(fill='x', padx=10, pady=2)
 
         # canvas settings
         self.canvas = CanvasMap(self.canvas_frame, (700,700))
@@ -109,6 +112,11 @@ class App(tk.Tk):
 
         # run
         self.mainloop()
+    
+    def select_grid_button(self):
+        """updates the boolean values"""
+        self.can_select=True
+        self.can_spawn=False
 
     def update_agent_info_label(self, agent_type, label_widget):
         """
@@ -151,8 +159,9 @@ class App(tk.Tk):
     def on_start_click(self):
         '''Start the simulation and create the mesa_model'''
         self.can_spawn = False
+        self.can_select = False
         if self.is_running is False:
-            self.canvas.unbind("<Button-1>")
+            # self.canvas.unbind("<Button-1>")
             self.start_button.config(state="normal", bg="#333333", text="⏸ Running...", fg="white", command=self.on_start_click) 
             if self.mesa_model is None:
                 if self.map_grid is None:
@@ -211,6 +220,8 @@ class App(tk.Tk):
         '''create the popup window'''
         if self.popup_window is None:
             self.popup_window = UAVSelectWindow(self,"Select UAV", (400,300), self.canvas)
+            self.can_select=False
+            self.can_spawn=True
 
     def snap_to_grid(self, x, y):
         '''Snaps the mouse to the grid'''
@@ -279,10 +290,6 @@ class CanvasFrame(tk.Frame):
         self.height = size[1]
         self.pack(side='left', padx=self.padding, pady=self.padding)
         self.pack_propagate(False)
-
-    def enable_grid_select(self):
-        self.parent.can_select = True
-        self.parent.can_spawn = False
         
 class CanvasMap(tk.Canvas):
     '''Handles the physcal canvas to draw on for simulation'''
@@ -296,19 +303,23 @@ class CanvasMap(tk.Canvas):
         self.end_x=0
         self.end_y=0
 
-        self.bind("<Button-1>", self.get_start_xy) #first press
-        self.bind("<ButtonRelease-1>", self.get_end_xy) #release
+        self.bind("<Button-1>", self.get_start_xy, add='+') #first press
+        self.bind("<ButtonRelease-1>", self.get_end_xy, add='+') #release
 
     def get_start_xy(self, event): 
         """Get the coords for start x and start y"""
         # (start x, start y, end x, end y)
-        self.start_x, self.start_y = event.x, event.y
+        print(f"can_select {self.parent.parent.can_select} and can_spawn {self.parent.parent.can_spawn}")
+        if self.parent.parent.can_select is True and self.parent.parent.can_spawn is False:
+            self.start_x, self.start_y = event.x, event.y
+        else:
+            print("CAN NOT SELECT")
 
     def get_end_xy(self, event):
         """Get the coords for the end x and end y"""
-        self.end_x, self.end_y = event.x, event.y
-        # if self.parent.parent.can_spawn == False:
-        self.create_rectangle(self.start_x, self.start_y, self.end_x, self.end_y, fill="blue", outline="red", width=2, tags="grid_select")
+        if self.parent.parent.can_select is True and self.parent.parent.can_spawn is False:
+            self.end_x, self.end_y = event.x, event.y
+            self.create_rectangle(self.start_x, self.start_y, self.end_x, self.end_y, fill="blue", outline="red", width=2, tags="grid_select")
 
 class GeneralFrames(tk.Frame):
     '''general frames in the menus'''
@@ -480,7 +491,7 @@ class UAVSelectWindow(tk.Toplevel):
         self.spawn_btn.config(text="Spawning", state="disabled")
         self.stop_btn.config(state="normal")
         # Only allow spawning of the selected type from the dropdown
-        self.canvas.bind("<Button-1>", self.place_agent)
+        self.canvas.bind("<Button-1>", self.place_agent, add='+')
         self.parent.can_spawn = True
 
     def place_agent(self, event):
