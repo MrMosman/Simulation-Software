@@ -27,7 +27,7 @@ class App(tk.Tk):
         self.is_running = False
         self.animation_job = None
         self.can_spawn = False
-        self.cell_count = 100
+        self.cell_count = 50
 
         # varibles for selection
         self.mouse_start_x = 0
@@ -302,24 +302,35 @@ class CanvasMap(tk.Canvas):
         self.start_y=0
         self.end_x=0
         self.end_y=0
+        self.current_rect = None
 
         self.bind("<Button-1>", self.get_start_xy, add='+') #first press
         self.bind("<ButtonRelease-1>", self.get_end_xy, add='+') #release
+        self.bind("<B1-Motion>", self.update_rectangle_mouse_drag, add='+') #update
 
     def get_start_xy(self, event): 
         """Get the coords for start x and start y"""
         # (start x, start y, end x, end y)
         print(f"can_select {self.parent.parent.can_select} and can_spawn {self.parent.parent.can_spawn}")
         if self.parent.parent.can_select is True and self.parent.parent.can_spawn is False:
-            self.start_x, self.start_y = event.x, event.y
+            self.start_x, self.start_y, _, _ = self.parent.parent.snap_to_grid(event.x, event.y)
+            self.current_rect=self.create_rectangle(self.start_x, self.start_y, self.start_x, self.start_y, outline='white')
+            # self.start_x, self.start_y = event.x, event.y
         else:
             print("CAN NOT SELECT")
 
     def get_end_xy(self, event):
         """Get the coords for the end x and end y"""
         if self.parent.parent.can_select is True and self.parent.parent.can_spawn is False:
-            self.end_x, self.end_y = event.x, event.y
-            self.create_rectangle(self.start_x, self.start_y, self.end_x, self.end_y, fill="blue", outline="red", width=2, tags="grid_select")
+            # self.end_x, self.end_y = event.x, event.y
+            # self.end_x, self.end_y, _, _ = self.parent.parent.snap_to_grid(event.x, event.y)
+            self.current_rect = None
+            # self.create_rectangle(self.start_x, self.start_y, self.end_x, self.end_y, fill="", outline="white", width=2, tags="grid_select")
+    
+    def update_rectangle_mouse_drag(self, event):
+        if self.current_rect:
+            self.end_x, self.end_y, _, _ = self.parent.parent.snap_to_grid(event.x, event.y)
+            self.coords(self.current_rect, self.start_x, self.start_y, self.end_x, self.end_y)
 
 class GeneralFrames(tk.Frame):
     '''general frames in the menus'''
