@@ -17,17 +17,24 @@ from temperature import Temperature
 class UUVAgent(mesa.Agent):
     """UUV agent testing class"""
 
-    def __init__(self, model, spawn, map, canvas, grid, *args, **kwargs):
+    def __init__(self, model, spawn, map, canvas, grid, target, *args, **kwargs):
         # remember to add target back to this
         super().__init__(model, *args, **kwargs)
         # Target and spawn
         self.spawn = spawn
-        # self.dest = target
-        self.dest = [35, 12] #hard code testing
 
+        self.status = True  # for cuuv to kill the UUV >:}
+
+        # self.dest = target
+        if target is not None:
+            self.dest = target.position 
+        else:
+            self.dest = [9, 33]
+        
+        print(spawn, " Debugging spawn")
         self.position = [grid[spawn[1]][spawn[0]].pos_x, grid[spawn[1]][spawn[0]].pos_y]
         # self.target = [grid[target[0]][target[1]].pos_x, grid[target[0]][target[1]].pos_y]
-        self.target = [grid[self.dest[1]][self.dest[0]].pos_x, grid[self.dest[1]][self.dest[0]].pos_y] #hard code testing
+        self.target = [[self.dest[1]], [self.dest[0]]] #hard code testing
         self.salinity = Salinity()
         self.temp = Temperature()
 
@@ -43,7 +50,7 @@ class UUVAgent(mesa.Agent):
         self.depth_max = 30
         # self.current_depth = self.map.depth_loc(x=self.position[0], y=self.position[1])
 
-        # Serch parameters
+        # Search parameters
         self.grid = np.array(grid)
         self.ROW, self.COL = self.grid.shape
         self.grid = grid
@@ -92,6 +99,11 @@ class UUVAgent(mesa.Agent):
         
     def step(self):
         """simple move towards target set function"""
+        #if target is not None:              #Update dest for moving target
+        #    self.dest = target.position 
+        if not self.status:
+            return  # CUUV killed the UUV
+
         new_direction = self.getTargetDir()
         if (self.position[0] != self.target[0]) or (self.position[1] != self.target[1]):
             new_x = np.round(new_direction[0]).astype(int)
