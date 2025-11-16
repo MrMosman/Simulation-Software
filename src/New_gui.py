@@ -170,6 +170,7 @@ class App(tk.Tk):
                     return
                 # addationl parameters here
                 # create the mesa_model here
+                viable_spawn_area = self.viable_spawn_select()
                 self.mesa_model = model.UUVModel(
                     spawns=self.spawn_data, 
                     map=self.current_map, 
@@ -264,6 +265,31 @@ class App(tk.Tk):
         y2 = y1 + grid_size
         self.canvas.create_rectangle(x1, y1, x2, y2, outline="white", width=2, tags="hover_rect")
 
+    def viable_spawn_select(self):
+        rect_ids = self.canvas.viable_spawn_pos()
+        viable_spawns = list()
+        for id in rect_ids:
+            # get the top and bottom coords
+            coords = self.canvas.coords(id)
+            x1, y1, x2, y2 = coords
+            top_left = self.snap_to_grid(x1, y1)
+            bottom_right = self.snap_to_grid(x2, y2)
+            top_left = top_left[-2:]
+            bottom_right = bottom_right[-2:]
+            print(f"top_left {top_left}, bottom_right {bottom_right}")
+
+            for j in range(top_left[1], bottom_right[1]+1):
+                for i in range(top_left[0], bottom_right[0]+1):
+                    if self.map_grid.grid[j][i].id == 0:
+                        spawn_point = (i, j)
+                        if spawn_point not in viable_spawns:
+                            viable_spawns.append(spawn_point)   
+                            print(f"({i}, {j})")
+            print(f"length {len(viable_spawns)}")
+
+        return 0
+    
+        
 class Menu(tk.Frame):
     """Handles the menu for the UAV Agents"""
     def __init__(self, parent, size, color):
@@ -314,7 +340,7 @@ class CanvasMap(tk.Canvas):
         print(f"can_select {self.parent.parent.can_select} and can_spawn {self.parent.parent.can_spawn}")
         if self.parent.parent.can_select is True and self.parent.parent.can_spawn is False:
             self.start_x, self.start_y, _, _ = self.parent.parent.snap_to_grid(event.x, event.y)
-            self.current_rect=self.create_rectangle(self.start_x, self.start_y, self.start_x, self.start_y, outline='white')
+            self.current_rect=self.create_rectangle(self.start_x, self.start_y, self.start_x, self.start_y, outline='white', tags="spawn_sel")
             # self.start_x, self.start_y = event.x, event.y
         else:
             print("CAN NOT SELECT")
@@ -322,16 +348,19 @@ class CanvasMap(tk.Canvas):
     def get_end_xy(self, event):
         """Get the coords for the end x and end y"""
         if self.parent.parent.can_select is True and self.parent.parent.can_spawn is False:
-            # self.end_x, self.end_y = event.x, event.y
-            # self.end_x, self.end_y, _, _ = self.parent.parent.snap_to_grid(event.x, event.y)
             self.current_rect = None
-            # self.create_rectangle(self.start_x, self.start_y, self.end_x, self.end_y, fill="", outline="white", width=2, tags="grid_select")
     
     def update_rectangle_mouse_drag(self, event):
+        """Updates the selection rectangle on mouse drag"""
         if self.current_rect:
             self.end_x, self.end_y, _, _ = self.parent.parent.snap_to_grid(event.x, event.y)
             self.coords(self.current_rect, self.start_x, self.start_y, self.end_x, self.end_y)
 
+    def viable_spawn_pos(self):
+        all_rect_ids = self.find_withtag("spawn_sel")
+        # print(f"all spawn selections {all_rect_ids}")
+        return all_rect_ids
+    
 class GeneralFrames(tk.Frame):
     '''general frames in the menus'''
     def __init__(self, parent, size, color=None, side=None, anchor=None, text=None):
