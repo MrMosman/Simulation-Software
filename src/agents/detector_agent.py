@@ -7,6 +7,7 @@ import geopandas as gpd
 from shapely.geometry import Point, shape
 from .CounterUUVAgent import CUUVAgent
 from .agent import UUVAgent
+import matplotlib.pyplot as plt
 
 #user defined
 from cell import Cell
@@ -21,6 +22,7 @@ class DetectorAgent(mesa.Agent):
         self.spawn = spawn
         self.position = [grid[spawn[1]][spawn[0]].pos_x, grid[spawn[1]][spawn[0]].pos_y]
 
+        self.prob_log = [] #Holds the detection and probability data for plotting
 
         # varibles
         self.radius = 20
@@ -35,14 +37,22 @@ class DetectorAgent(mesa.Agent):
 
         self.Used = False
 
+        plt.ion()               # plotting stuff
+        self.fig, self.ax = plt.subplots()
+        self.scatter = None
+
     def step(self):
         print("i have spawned")
         Detection = self.detect()
-        if Detection:
+        self.update_plot()
+        if not self.Used:
             print("Detection made by detector at position:", Detection.position)
-            if not self.Used:
+            Detection = self.detect()
+            if Detection:
                 self.Used = True
-                self.model.create_agent(type = "CUUV", pos = self.spawn, target = Detection)
+                
+                #Comment out to show the prob vs distance plot without spawning CUUVs
+                #self.model.create_agent(type = "CUUV", pos = self.spawn, target = Detection)
             
 
 
@@ -52,5 +62,39 @@ class DetectorAgent(mesa.Agent):
                 dist = np.sqrt((self.position[0] - agent.position[0])**2 + (self.position[1] - agent.position[1])**2)
                 if dist <= self.radius:
                     print("UUV is ", dist,  " units away from detector")
-                    return agent
+
+                    #IMPLEMENT DETECTION PROBABILITY
+                    p = self.rayleigh(dist, sigma=10)
+
+                    self.prob_log.append((dist, p)) #log distance and probability
+
+                    if np.random.rand() < p:
+                        print("Detected with probability:", p)
+                        return agent
+                    else:
+                        print("Failed to detect (prob:", p, ")")
+
+    
+
+    def rayleigh(self, distance, sigma=10):
+        return np.exp(-(distance**2) / (2 * sigma**2))
+
+    def update_plot(self):
+        """Live-updates detection probability scatter plot."""
+        if len(self.prob_log) == 0:
+            return
+
+        dist = [x[0] for x in self.prob_log]
+        prob = [x[1] for x in self.prob_log]
+
+        self.ax.clear()
+        self.ax.scatter(dist, prob)
+        self.ax.set_xlabel("Distance")
+        self.ax.set_ylabel("Detection Probability")
+        self.ax.set_title("Rayleigh Detection Probability vs Distance (Live)")
+
+        self.ax.set_ylim(0, 1)
+        self.ax.grid(True)
+
+        plt.pause(0.001)
 

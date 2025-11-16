@@ -33,13 +33,13 @@ class UUVModel(mesa.Model):
     MUTATION_RATE = 0.1
     AGENT_CHROMESOME_COMMAND = {'L': 1, 'R': 2, 'U': 3, 'D': 4}
     
-    def __init__(self, spawns, map, canvas, grid, *args, seed = None, rng = None, **kwargs):
+    def __init__(self, spawns, map, canvas, grid, targets, *args, seed = None, rng = None, **kwargs):
         super().__init__(*args, seed=seed, rng=rng, **kwargs)
         # setup mesa controls
 
         # sim stuff gonna get changed
         # self.num_agents = n
-        # self.targets = targets
+        self.targets = targets
         self.canvas = canvas
         self.spawns = spawns
         self.map = map
@@ -86,7 +86,7 @@ class UUVModel(mesa.Model):
                 for i in range(tmp_pop_count):
                     pos = tmp_pos_list[i]
                     print(f'CREATE AGENT->type: {agent_type}, pos: {pos}')
-                    self.create_agent(type=agent_type, pos=pos)
+                    self.create_agent(type=agent_type, pos=pos, target=targets)
 
         # Data cataloging
         self.data_collector = mesa.DataCollector(

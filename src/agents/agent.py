@@ -14,7 +14,7 @@ from cell import Cell
 from salinity import Salinity
 from temperature import Temperature
 
-class UUVAgent(mesa.Agent):
+class UUVAgent(mesa.Agent):                         #AS OF 11/14/25 Mike has added speed and has start path be dest (see lines 62-68)
     """UUV agent testing class"""
 
     def __init__(self, model, spawn, map, canvas, grid, target, *args, **kwargs):
@@ -22,14 +22,15 @@ class UUVAgent(mesa.Agent):
         super().__init__(model, *args, **kwargs)
         # Target and spawn
         self.spawn = spawn
-
+        
+        self.Speed = 1  # This value is multiplied by the added unit movement in x and y per step
         self.status = True  # for cuuv to kill the UUV >:}
 
         # self.dest = target
         if target is not None:
-            self.dest = target.position 
+            self.dest = target 
         else:
-            self.dest = [9, 33]
+            self.dest = [9, 33]         # sets a hard coded destination if there is no target, I (Mike) was using this for debugging.
         
         print(spawn, " Debugging spawn")
         self.position = [grid[spawn[1]][spawn[0]].pos_x, grid[spawn[1]][spawn[0]].pos_y]
@@ -58,14 +59,19 @@ class UUVAgent(mesa.Agent):
         # print(f'R={self.ROW}, C={self.COL}')
         self.a_star_search()
         # print(self.path[0])
-        tmp = self.path[0]
-        self.next_target = self.grid[tmp[0]][tmp[1]]
+        if self.path is None:
+            tmp = self.grid[self.dest[1]][self.dest[0]]
+            self.next_target = tmp
+        else:
+            tmp = self.path[0]
+            self.next_target = self.grid[tmp[0]][tmp[1]]
+        
         # print(self.next_target)
     
     def getTargetDir(self):
         target_x = self.next_target.pos_x
         target_y = self.next_target.pos_y
-        # print(f'target: {target_x}x{target_y}')
+        print(f'target: {target_x}x{target_y}') #DEBUGGGG
         # print(f'pos:{self.position}')
         new_x = target_x - self.position[0]
         new_y = target_y - self.position[1]
@@ -99,15 +105,13 @@ class UUVAgent(mesa.Agent):
         
     def step(self):
         """simple move towards target set function"""
-        #if target is not None:              #Update dest for moving target
-        #    self.dest = target.position 
         if not self.status:
             return  # CUUV killed the UUV
 
         new_direction = self.getTargetDir()
         if (self.position[0] != self.target[0]) or (self.position[1] != self.target[1]):
-            new_x = np.round(new_direction[0]).astype(int)
-            new_y = np.round(new_direction[1]).astype(int)
+            new_x = self.Speed*(np.round(new_direction[0]).astype(int))
+            new_y = self.Speed*(np.round(new_direction[1]).astype(int))
             # print(f'new_x:{new_x}')
             # print(f'new_y:{new_y}')
             self.position = np.array([self.position[0] + new_x, self.position[1]+new_y])

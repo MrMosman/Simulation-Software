@@ -100,6 +100,9 @@ class App(tk.Tk):
         # control bindings
         self.canvas.bind("<Motion>", self.update_hover_info)
 
+        #Targets holder
+        self.targets = []
+
         # run
         self.mainloop()
 
@@ -158,7 +161,8 @@ class App(tk.Tk):
                     spawns=self.spawn_data, 
                     map=self.current_map, 
                     grid=self.map_grid,
-                    canvas=self.canvas
+                    canvas=self.canvas,
+                    targets=self.targets
                     )
             self.is_running = True
             self.animate()
@@ -473,7 +477,8 @@ class UAVSelectWindow(tk.Toplevel):
             'pos': grid_pos,
             'name': agent_name
             }
-
+        if agent_type == "target":
+            self.parent.targets.append(new_agent_data['pos'])
         if agent_type in self.parent.spawn_data:
             self.parent.spawn_data[agent_type].append(new_agent_data)
             # Update the agent display when a new agent is added
