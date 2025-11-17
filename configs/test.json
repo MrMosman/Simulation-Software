@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0",
+  "created_at": "2025-11-13T18:29:56.589465Z",
+  "generator": "ConfigManager",
+  "spawns": {
+    "attacker": [
+      {
+        "type": "GA",
+        "pos": [
+          35,
+          11
+        ],
+        "name": "GA",
+        "color": "#781204",
+        "marker_id": 381
+      },
+      {
+        "type": "GA",
+        "pos": [
+          40,
+          13
+        ],
+        "name": "GA",
+        "color": "#781204",
+        "marker_id": 419
+      },
+      {
+        "type": "GA",
+        "pos": [
+          42,
+          6
+        ],
+        "name": "GA",
+        "color": "#781204",
+        "marker_id": 449
+      }
+    ]
+  }
+}
