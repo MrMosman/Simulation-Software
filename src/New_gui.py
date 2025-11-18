@@ -122,6 +122,9 @@ class App(tk.Tk):
         # control bindings
         self.canvas.bind("<Motion>", self.update_hover_info)
 
+        #Targets holder
+        self.targets = []
+
         # run
         self.mainloop()
 
@@ -526,25 +529,15 @@ class App(tk.Tk):
                     tk.messagebox.showerror("Error", "Please load a map before starting the simulation.")
                     self.start_button.config(state="normal", bg="#333333", text="▶ Start", command=self.on_start_click)
                     return
-
-                # Create the model
-                try:
-                    self.mesa_model = model.UUVModel(
-                        spawns=self.spawn_data,
-                        map=self.current_map,
-                        grid=self.map_grid,
-                        canvas=self.canvas
+                # addationl parameters here
+                # create the mesa_model here
+                self.mesa_model = model.UUVModel(
+                    spawns=self.spawn_data, 
+                    map=self.current_map, 
+                    grid=self.map_grid,
+                    canvas=self.canvas,
+                    targets=self.targets
                     )
-                except Exception as e:
-                    tk.messagebox.showerror("Error creating model", f"Failed to create simulation model:\n{e}")
-                    # restore button state
-                    self.mesa_model = None
-                    self.start_button.config(state="normal", bg="#333333", text="▶ Start", command=self.on_start_click)
-                    return
-            else:
-                pass
-
-            # Start the animation loop
             self.is_running = True
             # Switch Start button to a Pause / Running state
             self.start_button.config(state="normal", bg="#333333", text="⏸ Running...", command=self.on_start_click)
@@ -1055,6 +1048,8 @@ class UAVSelectWindow(tk.Toplevel):
             }
         
 
+        if agent_type == "target":
+            self.parent.targets.append(new_agent_data['pos'])
         if agent_type in self.parent.spawn_data:
             self.parent.spawn_data[agent_type].append(new_agent_data)
             # Update the agent display when a new agent is added

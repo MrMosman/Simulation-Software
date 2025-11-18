@@ -5,7 +5,7 @@ import mesa
 
 
 
-from . import agent, detector_agent, search_agent
+from . import agent, detector_agent, search_agent, CounterUUVAgent
 
 
 class UUVModel(mesa.Model):
@@ -15,15 +15,16 @@ class UUVModel(mesa.Model):
     AGENT_MAP = {
         "seeker" : agent.UUVAgent,
         "detector" : detector_agent.DetectorAgent,
-        "GA" : search_agent.SearchAgent
+        "GA" : search_agent.SearchAgent,
+        "CUUV" : CounterUUVAgent.CUUVAgent
     }
 
     # Univerisal agent types
     # if add new element must add a comma to end 
     # ie ('target', 'test', ) <-see how there is a comma after the new 'test' ageent
     AGENT_CATEGORIES = {
-        "attacker" : ("seeker", "detector", "GA"),
-        "defender" : ('target',)
+        "attacker" : ("seeker", "GA"),
+        "defender" : ('target',"detector", "CUUV",)
     }
 
     # Genetic Algorithm parameters
@@ -32,13 +33,13 @@ class UUVModel(mesa.Model):
     MUTATION_RATE = 0.1
     AGENT_CHROMESOME_COMMAND = {'L': 1, 'R': 2, 'U': 3, 'D': 4}
     
-    def __init__(self, spawns, map, canvas, grid, *args, seed = None, rng = None, **kwargs):
+    def __init__(self, spawns, map, canvas, grid, targets, *args, seed = None, rng = None, **kwargs):
         super().__init__(*args, seed=seed, rng=rng, **kwargs)
         # setup mesa controls
 
         # sim stuff gonna get changed
         # self.num_agents = n
-        # self.targets = targets
+        self.targets = targets
         self.canvas = canvas
         self.spawns = spawns
         self.map = map
@@ -65,6 +66,9 @@ class UUVModel(mesa.Model):
         # Process the spawn data
         self.process_spawn_data(spawns=spawns)
         
+        #For agent ID implementation
+        #self.NextID = 0
+
         # #create agents
         for agent_type in self.all_agent_types:
             tmp_pos_list = self.population_position[agent_type]
@@ -82,12 +86,16 @@ class UUVModel(mesa.Model):
                 for i in range(tmp_pop_count):
                     pos = tmp_pos_list[i]
                     print(f'CREATE AGENT->type: {agent_type}, pos: {pos}')
-                    self.create_agent(type=agent_type, pos=pos)
+                    self.create_agent(type=agent_type, pos=pos, target=targets)
 
         # Data cataloging
         self.data_collector = mesa.DataCollector(
-            agent_reporters={"Finnished_agent_count": "is_finnished"},
+            agent_reporters={"Finnished_agent_count": "is_finnished",
+            "position": "position",
+            "Agent type": "Agent_ID"},
             model_reporters={"Step": lambda self: self.steps, "Total Agents": lambda self: len(self.agents)}
+            
+        
         )
         self.score_GA()
 
@@ -98,6 +106,7 @@ class UUVModel(mesa.Model):
         self.agents.do("step")
         self.data_collector.collect(self)
         # print(self.data_collector.get_agent_vars_dataframe().head)
+        print("Model Stepping (Debugging)")
         print(self.data_collector.get_model_vars_dataframe().head)
         self.score_GA()
 
@@ -131,9 +140,14 @@ class UUVModel(mesa.Model):
         # Additional parameters
         extra_params = dict()
         if parameters:
-            group_id = parameters["group_id"]
+            group_id = parameters.get("group_id", None)
             if group_id is not None:
                 extra_params["group_id"]=parameters["group_id"]
+
+            target = parameters.get("target", None)
+        else:
+            target = None
+           
         
         AgentClass = self.AGENT_MAP.get(agent_type)
 
@@ -148,12 +162,20 @@ class UUVModel(mesa.Model):
             "spawn" : spawn_pos,
             "map" : self.map, 
             "canvas": self.canvas,
-            "grid": self.grid,          
+            "grid": self.grid,
+            "target": target
+            #"Agent ID": self.NI(),
+            #"Agent_type": agent_type       
         }
         final_kwargs = {**agent_kwargs, **extra_params}
 
         AgentClass.create_agents(**final_kwargs)
         
+
+    #def NI(self):
+    #    """Next ID generator for agents"""
+    #    self.NextID += 1
+    #    return self.NextID 
 
     def create_GA_population(self, agent_type):
         """Create a random genome for a population"""
