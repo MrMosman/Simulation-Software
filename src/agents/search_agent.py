@@ -215,3 +215,14 @@ class SearchAgent(mesa.Agent):
         self.canvas.delete(self.oval)
         # kill the agent in model
         self.remove()
+        
+    def cleanup(self):
+        """Remove this agent's canvas items (oval)."""
+        try:
+            if hasattr(self, "oval") and self.oval is not None:
+                try:
+                    self.canvas.delete(self.oval)
+                except Exception:
+                    pass
+        except Exception:
+            pass

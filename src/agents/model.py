@@ -176,50 +176,8 @@ class UUVModel(mesa.Model):
             for agent in ga_population[2:]:
                 agent.kill_your_self_now()
                 # Call the method here as well to get the score
-                # print(f"Agent ID: {agent.unique_id}, Fitness Score: {agent.fitness}")
+                fitness_score = agent.calculate_fitness()
+                print(f"Agent ID: {agent.unique_id}, Fitness Score: {fitness_score}")
             
-            # breed the parents
-            child_chromosones = list()
-            dad=self.save_list[0]
-            mom=self.save_list[1]
-            child_chromosones.append(dad.chromosone)
-            child_chromosones.append(mom.chromosone)
-            for _ in range(self.POP_SIZE-2): #subtract 2 for the parents
-                child_chromosones.append(dad.mate(mom))
-                # print(f"{_} child chromesone{dad.mate(mom)}")
-            dad.kill_your_self_now()
-            mom.kill_your_self_now()
-            self.save_list.clear()
-            self.child_chromosones=child_chromosones
-            
-    def create_initial_population(self):
-         """Create the intial populations for the model use only onec"""
-         for agent_type in self.all_agent_types:
-            tmp_pos_list = self.population_position[agent_type]
-            tmp_pop_count = self.population_count[agent_type]
-            if tmp_pop_count == 0:
-                continue
-            print(f"Current Agent is : {agent_type}")
-            if agent_type == "GA":
-                for i in range(tmp_pop_count):
-                    pos = tmp_pos_list[i]
-                    for _ in range(self.POP_SIZE):               
-                        self.create_agent(type=agent_type, pos=pos, group_id=i, gen=self.current_generation, chromosone=0)
-                        print(f'CREATE AGENT->type: {agent_type}, pos: {pos}, group_id: {i}')            
-            else:
-                for i in range(tmp_pop_count):
-                    pos = tmp_pos_list[i]
-                    print(f'CREATE AGENT->type: {agent_type}, pos: {pos}')
-                    self.create_agent(type=agent_type, pos=pos)
-
-    def create_next_generation(self, agent_type):
-        
-        tmp_pos_list = self.population_position[agent_type]
-        tmp_pop_count = self.population_count[agent_type]
-        for i in range(tmp_pop_count):
-            pos = tmp_pos_list[i]
-            for _ in range(self.POP_SIZE):               
-                self.create_agent(type=agent_type, pos=pos, group_id=i, gen=self.current_generation, chromosone=self.child_chromosones[_])
-                print(f'CREATE AGENT->type: {agent_type}, pos: {pos}, group_id: {i}')  
 
 

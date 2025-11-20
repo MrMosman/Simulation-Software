@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0",
+  "created_at": "2025-11-14T20:19:42.477678Z",
+  "generator": "ConfigManager",
+  "spawns": {
+    "attacker": [
+      {
+        "type": "seeker",
+        "pos": [
+          42,
+          6
+        ],
+        "name": "seeker",
+        "color": "#C60707",
+        "marker_id": 139
+      },
+      {
+        "type": "seeker",
+        "pos": [
+          46,
+          11
+        ],
+        "name": "seeker",
+        "color": "#C60707",
+        "marker_id": 157
+      },
+      {
+        "type": "detector",
+        "pos": [
+          40,
+          21
+        ],
+        "name": "detector",
+        "color": "#D209AA",
+        "marker_id": 361
+      },
+      {
+        "type": "GA",
+        "pos": [
+          33,
+          5
+        ],
+        "name": "GA",
+        "color": "#781204",
+        "marker_id": 316
+      }
+    ],
+    "defender": [
+      {
+        "type": "target",
+        "pos": [
+          41,
+          15
+        ],
+        "name": "target",
+        "color": "#0600AA",
+        "marker_id": 258
+      }
+    ]
+  }
+}

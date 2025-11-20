@@ -23,7 +23,7 @@ class UUVAgent(mesa.Agent):
         # Target and spawn
         self.spawn = spawn
         # self.dest = target
-        self.dest = [35, 12] #hard code testing
+        self.dest = [27,22] #hard code testing
 
         self.position = [grid[spawn[1]][spawn[0]].pos_x, grid[spawn[1]][spawn[0]].pos_y]
         # self.target = [grid[target[0]][target[1]].pos_x, grid[target[0]][target[1]].pos_y]
@@ -208,6 +208,7 @@ class UUVAgent(mesa.Agent):
 
         # If the destination is not found after visiting all cells
         if not found_dest:
+            self.path = [0, 0]
             print("Failed to find the destination cell")
 
     def trace_path(self, cell_details, dest):
@@ -251,3 +252,14 @@ class UUVAgent(mesa.Agent):
     def calculate_h_value(self, row, col):
         """calculate the guess value of a cell, Euclidean"""
         return ((row - self.dest[0]) ** 2 + (col - self.dest[1]) ** 2) ** 0.5
+
+    def cleanup(self):
+        """Remove canvas items created by this agent."""
+        try:
+            if hasattr(self, "oval") and self.oval is not None:
+                try:
+                    self.canvas.delete(self.oval)
+                except Exception:
+                    pass
+        except Exception:
+            pass
