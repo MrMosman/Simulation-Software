@@ -30,7 +30,7 @@ class SearchAgent(mesa.Agent):
         # Genetic Algo Vars
         self.generation = generation
         self.chromosone = list()
-        if generation is 0:
+        if generation == 0:
             self.chromosone = self.create_chromosone(self.random.randint(10, 30))
         else:
             self.chromosone = chromosone
