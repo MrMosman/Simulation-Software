@@ -14,7 +14,7 @@ from . import model
 class SearchAgent(mesa.Agent):
     '''Search Agent for GA'''
     # keep in mind that the spawns pos(x,y) are flipped
-    def __init__(self,model, spawn, map, canvas, grid, group_id, *args, **kwargs):
+    def __init__(self,model, spawn, map, canvas, grid, group_id, generation, chromosone, *args, **kwargs):
         super().__init__(model, *args, **kwargs)
         # Target and spawn
         
@@ -24,18 +24,25 @@ class SearchAgent(mesa.Agent):
         self.grid = np.array(grid)
         self.ROW, self.COL = self.grid.shape
         self.grid = grid
-        self.target_index = [18, 26]
+        self.target_index = [0, 0]
 
 
         # Genetic Algo Vars
-        self.chromosone = self.create_chromosone(self.random.randint(1, 10))
+        self.generation = generation
+        self.chromosone = list()
+        if generation == 0:
+            self.chromosone = self.create_chromosone(self.random.randint(10, 30))
+        else:
+            self.chromosone = chromosone
+
         self.commands = iter(self.chromosone)
-        self.target = (17, 25) #remove hardcode later for 
+        self.target = (0, 0) #remove hardcode later for 
         self.fitness = 0
         self.is_failed = False
         self.next_command_num = 0
         self.is_finnished = False
         self.group_id = group_id
+        self.mutation_rate = 0.5 #get from the model hard cord for now
 
 
         # varibles
@@ -52,23 +59,27 @@ class SearchAgent(mesa.Agent):
 
     def step(self):
         '''Called by the Mesa Model'''
-        if not self.is_failed or not self.is_finnished:
-            if self.next_command_num < len(self.chromosone):
-                next_command = next(self.commands)
-                self.next_command_num +=1
-                self.get_next_pos(next_command)
-                self.update_icon_pos()              
-            else:
-                self.is_finnished = True
-                self.canvas.itemconfig(self.oval, fill="black")
-                return
+        if not self.is_failed:
+            if not self.is_finnished:
+                if self.next_command_num < len(self.chromosone):
+                    next_command = next(self.commands)
+                    self.next_command_num +=1
+                    self.get_next_pos(next_command)
+                    self.update_icon_pos()              
+                else:
+                    self.is_finnished = True
+                    self.canvas.itemconfig(self.oval, fill="black")
+                    self.chromosone = self.chromosone + self.create_chromosone(5) #add 5 new random moves
+                    self.commands = iter(self.chromosone)
+                    self.next_command_num = 0
+                    return
             # print(f'pix pos: {self.pos_pixel}')
             # print(f'grid pos: {self.grid_index}')
             # print(f'failed: {self.is_failed}')
             # print(f'manhatten: {self.calculate_fitness()}')
         else:
             self.is_finnished = True
-            
+       
     def get_next_pos(self, command):
         '''Return the next position and if valid'''
         match command:
@@ -146,9 +157,17 @@ class SearchAgent(mesa.Agent):
         y2=center_y+5
         self.canvas.coords(self.oval, x1, y1, x2, y2) 
 
-    def mutate_genes(self):
-        """Mutate the genes"""
-        return NotImplementedError
+    def mutate_genes(self, chromosone):
+        """Mutate the genes of the child"""
+        new_chromosone = list()
+        chrome_list = list(model.UUVModel.AGENT_CHROMESOME_COMMAND.keys())
+        for gene in chromosone:
+            prob = self.random.random()
+            if prob < self.mutation_rate:
+                new_chromosone.append(self.random.choice(chrome_list))
+            else:
+                new_chromosone.append(gene)
+        return new_chromosone
 
     def create_chromosone(self, initial_size):
         """Create and return the genome"""
@@ -160,9 +179,17 @@ class SearchAgent(mesa.Agent):
             temp.append(self.random.choice(chrome_list))
         return temp
     
-    def mate(self):
+    def mate(self, spouse):
         """Mate and produces offspring"""
-        return NotImplementedError
+        # create child chrome
+        child_chromosone = list()
+        my_chrome_midpoint = len(self.chromosone)//2
+        spouse_chrome_midpoint = len(spouse.chromosone)//2
+        child_chromosone = self.chromosone[:my_chrome_midpoint] + spouse.chromosone[spouse_chrome_midpoint:]
+
+        # mutate the poor thing
+        child_chromosone = self.mutate_genes(child_chromosone)
+        return child_chromosone
     
     def calculate_fitness(self):
         """Calulate the fitness score of this agent using manhatten distance"""
@@ -170,7 +197,10 @@ class SearchAgent(mesa.Agent):
         y1 = self.grid_index[1]
         x2 = self.target_index[0]
         y2 = self.target_index[1]
-        return  abs(x1-x2) + abs(y1-y2)
+        self.fitness = abs(x1-x2) + abs(y1-y2)
+        if self.is_failed is True:
+            self.fitness * 30
+        return  self.fitness
 
     def increase_chromosone(self, amt_to_add):
         """Add more genomes to the chromeosone"""
@@ -178,6 +208,13 @@ class SearchAgent(mesa.Agent):
         temp = self.create_chromosone(amt_to_add)
         self.chromosone=self.chromosone + temp
         self.commands = iter(self.chromosone)
+
+    def kill_your_self_now(self):
+        """Will kill the agent NOW, it serves zero purpose. kys"""
+        # remove itself from the screen
+        self.canvas.delete(self.oval)
+        # kill the agent in model
+        self.remove()
         
     def cleanup(self):
         """Remove this agent's canvas items (oval)."""

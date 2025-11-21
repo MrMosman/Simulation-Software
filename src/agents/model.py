@@ -65,6 +65,10 @@ class UUVModel(mesa.Model):
 
         # Process the spawn data
         self.process_spawn_data(spawns=spawns)
+        self.save_list = list()
+        self.current_generation = 0
+        self.child_chromosones = list()
+
         
         #For agent ID implementation
         #self.NextID = 0
@@ -87,6 +91,7 @@ class UUVModel(mesa.Model):
                     pos = tmp_pos_list[i]
                     print(f'CREATE AGENT->type: {agent_type}, pos: {pos}')
                     self.create_agent(type=agent_type, pos=pos, target=targets)
+        self.create_initial_population()
 
         # Data cataloging
         self.data_collector = mesa.DataCollector(
@@ -97,18 +102,34 @@ class UUVModel(mesa.Model):
             
         
         )
-        self.score_GA()
-
-
 
     def step(self):
         """advance model by one step"""
         self.agents.do("step")
         self.data_collector.collect(self)
-        # print(self.data_collector.get_agent_vars_dataframe().head)
+
+        # retrive data from datacollecter
+        raw_agent_data = self.data_collector.get_agent_vars_dataframe()
         print("Model Stepping (Debugging)")
-        print(self.data_collector.get_model_vars_dataframe().head)
-        self.score_GA()
+        raw_model_data = self.data_collector.get_model_vars_dataframe()
+        finished_count = 0
+        if not raw_agent_data.empty and not raw_model_data.empty:
+            # get agent data
+            current_step = raw_agent_data.index.get_level_values('Step').max() # get the max of the Step
+            is_finnsihed_step = raw_agent_data.xs(current_step, level="Step")['Finnished_agent_count'] # get the cross section of the newest step and Step
+            finished_count = is_finnsihed_step.sum() #return a sum of how many agents have finnished
+            print(f"Finished agents at step {current_step}: {finished_count}")
+       
+        if finished_count == len(self.agents):
+            # add the losers to a kill list to remove later
+            # self.remove_all_agents()
+            # print(len(self.agents))
+            self.current_generation+=1
+            print(f"Current Generation: {self.current_generation}")
+            self.score_GA()
+            self.create_next_generation(agent_type="GA")
+            # self.create_population()
+
 
     def agent_registration(self, agent_instance, pos, type_name):
         '''Inital Agent registration'''
@@ -142,7 +163,15 @@ class UUVModel(mesa.Model):
         if parameters:
             group_id = parameters.get("group_id", None)
             if group_id is not None:
-                extra_params["group_id"]=parameters["group_id"]
+                extra_params["group_id"]=group_id
+
+            current_gen = parameters["gen"]
+            if current_gen is not None:
+                extra_params["generation"]=current_gen
+
+            chromosone = parameters["chromosone"]
+            if chromosone is not None:
+                extra_params["chromosone"]=chromosone
 
             target = parameters.get("target", None)
         else:
@@ -150,7 +179,6 @@ class UUVModel(mesa.Model):
            
         
         AgentClass = self.AGENT_MAP.get(agent_type)
-
         if not AgentClass:
             print(f"Error: Unknown agent type {agent_type}")
             return
@@ -182,107 +210,60 @@ class UUVModel(mesa.Model):
         return NotImplementedError
     
     def score_GA(self):
-        """Scores and orders the fitness fucntion"""
+        """Scores and orders the fitness function"""
         ga_class = self.AGENT_MAP.get('GA')
         ga_agent_set = self.agents_by_type.get(ga_class)
         if ga_agent_set:
             ga_population = list(ga_agent_set)
-            ga_population = sorted(ga_population, key= lambda x:x.calculate_fitness())
-            for agent in ga_population:
+            ga_population = sorted(ga_population, key= lambda x:x.calculate_fitness(), reverse=False)
+            # DEBUG
+            self.save_list = ga_population[:2] #get best
+            for agent in ga_population[2:]:
+                agent.kill_your_self_now()
                 # Call the method here as well to get the score
-                fitness_score = agent.calculate_fitness()
-                print(f"Agent ID: {agent.unique_id}, Fitness Score: {fitness_score}")
+                # print(f"Agent ID: {agent.unique_id}, Fitness Score: {agent.fitness}")
             
-    def clear_agents(self):
-        """Remove agents and clear model bookkeeping so the model can be discarded."""
-        # 0) Defensive: try to iterate existing agents first and let them clean up
-        try:
-            agents_snapshot = []
-            if hasattr(self, "agents"):
-                # attempt to get an iterable snapshot of agents
-                try:
-                    agents_snapshot = list(self.agents)
-                except Exception:
-                    # fallback: some containers expose _agents dict
-                    if hasattr(self.agents, "_agents"):
-                        try:
-                            agents_snapshot = list(self.agents._agents.values())
-                        except Exception:
-                            agents_snapshot = []
-            # let agents perform their cleanup and remove their canvas items if present
-            for a in agents_snapshot:
-                try:
-                    if hasattr(a, "cleanup"):
-                        try:
-                            a.cleanup()
-                        except Exception:
-                            pass
-                    # remove agent's canvas oval if stored on the agent and model has a canvas
-                    if hasattr(a, "oval") and hasattr(self, "canvas") and self.canvas is not None:
-                        try:
-                            self.canvas.delete(a.oval)
-                        except Exception:
-                            pass
-                except Exception:
-                    pass
-        except Exception:
-            pass
+            # breed the parents
+            child_chromosones = list()
+            dad=self.save_list[0]
+            mom=self.save_list[1]
+            child_chromosones.append(dad.chromosone)
+            child_chromosones.append(mom.chromosone)
+            for _ in range(self.POP_SIZE-2): #subtract 2 for the parents
+                child_chromosones.append(dad.mate(mom))
+                # print(f"{_} child chromesone{dad.mate(mom)}")
+            dad.kill_your_self_now()
+            mom.kill_your_self_now()
+            self.save_list.clear()
+            self.child_chromosones=child_chromosones
+            
+    def create_initial_population(self):
+         """Create the intial populations for the model use only once"""
+         for agent_type in self.all_agent_types:
+            tmp_pos_list = self.population_position[agent_type]
+            tmp_pop_count = self.population_count[agent_type]
+            if tmp_pop_count == 0:
+                continue
+            print(f"Current Agent is : {agent_type}")
+            if agent_type == "GA":
+                for i in range(tmp_pop_count):
+                    pos = tmp_pos_list[i]
+                    for _ in range(self.POP_SIZE):               
+                        self.create_agent(type=agent_type, pos=pos, group_id=i, gen=self.current_generation, chromosone=0)
+                        print(f'CREATE AGENT->type: {agent_type}, pos: {pos}, group_id: {i}')            
+            else:
+                for i in range(tmp_pop_count):
+                    pos = tmp_pos_list[i]
+                    print(f'CREATE AGENT->type: {agent_type}, pos: {pos}')
+                    self.create_agent(type=agent_type, pos=pos)
 
-        # 1) Clear scheduler/agent container if present
-        try:
-            if hasattr(self, "agents"):
-                try:
-                    self.agents.clear()
-                except Exception:
-                    # fallback for different AgentBuffer implementations
-                    if hasattr(self.agents, "_agents"):
-                        try:
-                            self.agents._agents.clear()
-                        except Exception:
-                            pass
-            if hasattr(self, "schedule"):
-                try:
-                    if hasattr(self.schedule, "_agents"):
-                        self.schedule._agents.clear()
-                    elif hasattr(self.schedule, "agents"):
-                        self.schedule.agents.clear()
-                except Exception:
-                    pass
-            # also clear any 'agents_by_type' mapping if present
-            if hasattr(self, "agents_by_type"):
-                try:
-                    self.agents_by_type.clear()
-                except Exception:
-                    pass
-        except Exception:
-            print("Warning: could not fully clear schedule/agents container")
+    def create_next_generation(self, agent_type):     
+        tmp_pos_list = self.population_position[agent_type]
+        tmp_pop_count = self.population_count[agent_type]
+        for i in range(tmp_pop_count):
+            pos = tmp_pos_list[i]
+            for _ in range(self.POP_SIZE):               
+                self.create_agent(type=agent_type, pos=pos, group_id=i, gen=self.current_generation, chromosone=self.child_chromosones[_])
+                print(f'CREATE AGENT->type: {agent_type}, pos: {pos}, group_id: {i}')  
 
-        # 2) Clear grid backing (if any)
-        try:
-            if hasattr(self, "grid"):
-                if hasattr(self.grid, "_grid"):
-                    try:
-                        self.grid._grid.clear()
-                    except Exception:
-                        pass
-        except Exception:
-            pass
 
-        # 3) Reset population bookkeeping
-        try:
-            if hasattr(self, "population_count"):
-                for k in list(self.population_count.keys()):
-                    self.population_count[k] = 0
-            if hasattr(self, "population_position"):
-                for k in list(self.population_position.keys()):
-                    self.population_position[k] = []
-        except Exception:
-            pass
-
-        # 4) Clear data collector (match attribute name used in __init__)
-        try:
-            # use the attribute name you actually assigned in __init__
-            if hasattr(self, "data_collector"):
-                self.data_collector = None
-        except Exception:
-            pass
