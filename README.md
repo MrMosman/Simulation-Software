@@ -1,4 +1,8 @@
 # University of Massachusetts Dartmouth UUV SIM
+### 11/20/25
+cleaned up old branches, merge almost everything together
+dont know what Scrum25, 14and16, or double-click do as nothing was differnet as far as i could tell
+
 ### SCRUM 14 & 16 changelog:
 Added Lines (New_Gui):
 SCRUM 14:
