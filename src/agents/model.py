@@ -165,7 +165,7 @@ class UUVModel(mesa.Model):
         AgentClass.create_agents(**final_kwargs)
     
     def score_GA(self):
-        """Scores and orders the fitness fucntion"""
+        """Scores and orders the fitness function"""
         ga_class = self.AGENT_MAP.get('GA')
         ga_agent_set = self.agents_by_type.get(ga_class)
         if ga_agent_set:
@@ -193,7 +193,7 @@ class UUVModel(mesa.Model):
             self.child_chromosones=child_chromosones
             
     def create_initial_population(self):
-         """Create the intial populations for the model use only onec"""
+         """Create the intial populations for the model use only once"""
          for agent_type in self.all_agent_types:
             tmp_pos_list = self.population_position[agent_type]
             tmp_pop_count = self.population_count[agent_type]
@@ -212,8 +212,7 @@ class UUVModel(mesa.Model):
                     print(f'CREATE AGENT->type: {agent_type}, pos: {pos}')
                     self.create_agent(type=agent_type, pos=pos)
 
-    def create_next_generation(self, agent_type):
-        
+    def create_next_generation(self, agent_type):     
         tmp_pos_list = self.population_position[agent_type]
         tmp_pop_count = self.population_count[agent_type]
         for i in range(tmp_pop_count):
