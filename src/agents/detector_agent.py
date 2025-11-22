@@ -32,7 +32,7 @@ class DetectorAgent(mesa.Agent):
         self.canvas.lift(self.radius_oval)
 
     def step(self):
-        print("i have spawned")
+        return
 
     def cleanup(self):
         """Remove this agent's canvas items (oval and detection radius)."""

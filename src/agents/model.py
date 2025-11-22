@@ -70,6 +70,7 @@ class UUVModel(mesa.Model):
         # model GA assignments
         self.ga_model_active = True
         self.ga_model_pop = self.create_inital_model_pop(self.POP_SIZE)
+        self.det_cost = 50
 
         # agent GA assignments
         self.current_generation = 0
@@ -167,7 +168,8 @@ class UUVModel(mesa.Model):
         }
         final_kwargs = {**agent_kwargs, **extra_params}
 
-        AgentClass.create_agents(**final_kwargs)
+        
+        return AgentClass.create_agents(**final_kwargs)
     
     def score_GA(self):
         """Scores and orders the fitness function"""
@@ -218,6 +220,7 @@ class UUVModel(mesa.Model):
                     self.create_agent(type=agent_type, pos=pos)
 
     def create_next_generation(self, agent_type):     
+        """Creates the next generation of for the GA agents, not the model"""
         tmp_pos_list = self.population_position[agent_type]
         tmp_pop_count = self.population_count[agent_type]
         for i in range(tmp_pop_count):
@@ -226,11 +229,32 @@ class UUVModel(mesa.Model):
                 self.create_agent(type=agent_type, pos=pos, group_id=i, gen=self.current_generation, chromosone=self.child_chromosones[_])
                 print(f'CREATE AGENT->type: {agent_type}, pos: {pos}, group_id: {i}')  
 
-    def create_inital_model_pop(self, size):
+    def create_inital_model_pop(self, pop_size):
+        """Creates the inital model ga population, not the same as create_intital_agent_pop"""
         population=[]
-        chosen_spawn=[]
-        for _ in range(size):
-            # individual= #chose random number of dectors, and their spawns
-            print("test")
+        for _ in range(pop_size):                      
+            individual = self.create_model_agent()         
+            print(individual)
+            population.append(individual)
         return population
+    
+    def create_model_agent(self):
+        """Creates the model GA agents"""
+        num_detector = self.random.randrange(1, 3)
+        my_lil_dude_list = list()
+        tot_cost = 50*num_detector
+        chosen_spawn=[]
+
+        for _ in range(num_detector):
+            sel_spawn = False
+            while sel_spawn is False:
+                spawn=self.random.choice(self.viable_spawns)
+                if spawn not in chosen_spawn:
+                    sel_spawn = True 
+
+            lil_dude = self.create_agent(type="detector", pos=spawn)
+            my_lil_dude_list.append(lil_dude)
+        individual = {"#_detc": num_detector, "agent_detc": my_lil_dude_list, "tot_cost": tot_cost}
+        return individual
+
 

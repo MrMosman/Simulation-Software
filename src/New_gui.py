@@ -619,6 +619,9 @@ class App(tk.Tk):
         self.start_button.config(state="normal", bg="#333333", text="▶ Start", fg="white", command=self.on_start_click)
         self.canvas_frame.config(bg="#333333")
 
+        # 6) delete selection rect
+        self.canvas.delete("spawn_sel")
+
     def animate(self):
         '''animate the screen'''
         if self.is_running and self.mesa_model is not None:
@@ -682,16 +685,18 @@ class App(tk.Tk):
 
     def viable_spawn_select(self):
         rect_ids = self.canvas.viable_spawn_pos()
+        # print(f"rects: {rect_ids}")
         viable_spawns = list()
         for id in rect_ids:
             # get the top and bottom coords
+            # print(f"rect id: {id}")
             coords = self.canvas.coords(id)
             x1, y1, x2, y2 = coords
             top_left = self.snap_to_grid(x1, y1)
             bottom_right = self.snap_to_grid(x2, y2)
             top_left = top_left[-2:]
             bottom_right = bottom_right[-2:]
-            print(f"top_left {top_left}, bottom_right {bottom_right}")
+            # print(f"top_left {top_left}, bottom_right {bottom_right}")
 
             for j in range(top_left[1], bottom_right[1]+1):
                 for i in range(top_left[0], bottom_right[0]+1):
@@ -701,9 +706,7 @@ class App(tk.Tk):
                             viable_spawns.append(spawn_point)   
                             # print(f"({i}, {j})")
             # print(f"length {len(viable_spawns)}")
-            return viable_spawns
-
-        return 0
+        return viable_spawns
     
         
 class Menu(tk.Frame):
