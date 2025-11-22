@@ -14,8 +14,9 @@ from cell import Cell
 
 class DetectorAgent(mesa.Agent):
     '''Detector Agnet for a sensor'''
-    # keep in mind that the spawns pos(x,y) are flipped
-    def __init__(self, model, spawn, map, canvas, target, grid, *args, **kwargs):
+    # keep in mind that the spawns pos(x,y) are flipped 
+    # add target later
+    def __init__(self, model, spawn, map, canvas, grid, *args, **kwargs):
         super().__init__(model, *args, **kwargs)
         # Target and spawn
         
@@ -37,26 +38,25 @@ class DetectorAgent(mesa.Agent):
 
         self.Used = False
 
-        plt.ion()               # plotting stuff
-        self.fig, self.ax = plt.subplots()
-        self.scatter = None
+        # plt.ion()               # plotting stuff
+        # self.fig, self.ax = plt.subplots()
+        # self.scatter = None
 
     def step(self):
-        print("i have spawned")
-        Detection = self.detect()
-        self.update_plot()
+        # Detection = self.detect()
+        # self.update_plot()
         if not self.Used:
-            print("Detection made by detector at position:", Detection.position)
-            Detection = self.detect()
-            if Detection:
-                self.Used = True
+            return #make the damn thing shut up
+            # print("Detection made by detector at position:", Detection.position)
+            # Detection = self.detect()
+            # if Detection:
+            #     self.Used = True
                 
                 #Comment out to show the prob vs distance plot without spawning CUUVs
                 #self.model.create_agent(type = "CUUV", pos = self.spawn, target = Detection)
-            
-
 
     def detect(self):
+        """Creates a pop up window"""
         for agent in self.model.agents:
             if isinstance(agent, UUVAgent):
                 dist = np.sqrt((self.position[0] - agent.position[0])**2 + (self.position[1] - agent.position[1])**2)

@@ -174,9 +174,7 @@ class UUVModel(mesa.Model):
             "spawn" : spawn_pos,
             "map" : self.map, 
             "canvas": self.canvas,
-            "grid": self.grid,
-            #"Agent ID": self.NI(),
-            #"Agent_type": agent_type       
+            "grid": self.grid,     
         }
         final_kwargs = {**agent_kwargs, **extra_params}
 
