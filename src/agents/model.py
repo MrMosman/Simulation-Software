@@ -270,6 +270,7 @@ class UUVModel(mesa.Model):
 
             lil_dude = self.create_agent(type="detector", pos=spawn)
             my_lil_dude_list.append(lil_dude)
+        # get merge working
         individual = {"#_detc": num_detector, "agent_detc": my_lil_dude_list, "tot_cost": tot_cost}
         return individual
 
