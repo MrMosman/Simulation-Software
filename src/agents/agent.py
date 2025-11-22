@@ -103,24 +103,24 @@ class UUVAgent(mesa.Agent):
             self.canvas.itemconfig(self.oval, fill="red")  # Change color to red while moving
   
 
-            # new saltiny stuff
-            nearest_salinity_point = self.salinity.find_nearest_point(self.position)
-            if nearest_salinity_point:
-                top_salinity = nearest_salinity_point["top_salinity"]
-                bottom_salinity = nearest_salinity_point["bottom_salinity"]
-                print(f"Agent at position {self.position} is near salinity point {nearest_salinity_point['coordinates']}")
-                print(f"Top Salinity in ppt: {top_salinity}, Bottom Salinity in ppt: {bottom_salinity}")
-            else:
-                print(f"No salinity data found for agent at position {self.position}")     
+            # # new saltiny stuff
+            # nearest_salinity_point = self.salinity.find_nearest_point(self.position)
+            # if nearest_salinity_point:
+            #     top_salinity = nearest_salinity_point["top_salinity"]
+            #     bottom_salinity = nearest_salinity_point["bottom_salinity"]
+            #     print(f"Agent at position {self.position} is near salinity point {nearest_salinity_point['coordinates']}")
+            #     print(f"Top Salinity in ppt: {top_salinity}, Bottom Salinity in ppt: {bottom_salinity}")
+            # else:
+            #     print(f"No salinity data found for agent at position {self.position}")     
 
-            nearest_temp_point = self.temp.find_nearest_point(self.position) #Find nearest termperature point
-            if nearest_temp_point:
-                top_temp = nearest_temp_point["top_temp"]
-                bottom_temp = nearest_temp_point["bottom_temp"]
-                print(f"Agent at position {self.position} is near temp point {nearest_temp_point['coordinates']}")
-                print(f"Top temp in C: {top_temp}, Bottom temp in C: {bottom_temp}")
-            else:
-                print(f"No temp data found for agent at position {self.position}")   
+            # nearest_temp_point = self.temp.find_nearest_point(self.position) #Find nearest termperature point
+            # if nearest_temp_point:
+            #     top_temp = nearest_temp_point["top_temp"]
+            #     bottom_temp = nearest_temp_point["bottom_temp"]
+            #     print(f"Agent at position {self.position} is near temp point {nearest_temp_point['coordinates']}")
+            #     print(f"Top temp in C: {top_temp}, Bottom temp in C: {bottom_temp}")
+            # else:
+            #     print(f"No temp data found for agent at position {self.position}")   
   
 
     def a_star_search(self):
