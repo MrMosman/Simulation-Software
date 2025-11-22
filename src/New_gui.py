@@ -132,6 +132,9 @@ class App(tk.Tk):
         # control bindings
         self.canvas.bind("<Motion>", self.update_hover_info)
 
+        #Targets holder
+        self.targets = []
+
         # run
         self.mainloop()
     
@@ -551,6 +554,7 @@ class App(tk.Tk):
                         grid=self.map_grid,
                         canvas=self.canvas,
                         viable_spawn=viable_spawn_area
+                        targets=self.targets
                     )
                 except Exception as e:
                     tk.messagebox.showerror("Error creating model", f"Failed to create simulation model:\n{e}")
@@ -1140,8 +1144,8 @@ class UAVSelectWindow(tk.Toplevel):
             'name': agent_name,
             'color': color_for_type
             }
-        
-
+        if agent_type == "target":
+            self.parent.targets.append(new_agent_data['pos'])
         if agent_type in self.parent.spawn_data:
             self.parent.spawn_data[agent_type].append(new_agent_data)
             # Update the agent display when a new agent is added
