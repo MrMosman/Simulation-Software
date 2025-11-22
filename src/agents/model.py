@@ -32,7 +32,7 @@ class UUVModel(mesa.Model):
     MUTATION_RATE = 0.1
     AGENT_CHROMESOME_COMMAND = {'L': 1, 'R': 2, 'U': 3, 'D': 4}
     
-    def __init__(self, spawns, map, canvas, grid, *args, seed = None, rng = None, **kwargs):
+    def __init__(self, spawns, map, canvas, grid, viable_spawn,*args, seed = None, rng = None, **kwargs):
         super().__init__(*args, seed=seed, rng=rng, **kwargs)
         # setup mesa controls
 
@@ -43,6 +43,7 @@ class UUVModel(mesa.Model):
         self.spawns = spawns
         self.map = map
         self.grid = grid.grid
+        self.viable_spawns = viable_spawn
 
         # retrieve data types
         # flatten catagories
@@ -65,11 +66,15 @@ class UUVModel(mesa.Model):
         # Process the spawn data
         self.process_spawn_data(spawns=spawns)
         self.save_list = list()
+
+        # model GA assignments
+        self.ga_model_active = True
+        self.ga_model_pop = self.create_inital_model_pop(self.POP_SIZE)
+
+        # agent GA assignments
         self.current_generation = 0
         self.child_chromosones = list()
-
-        # #create agents
-        self.create_initial_population()
+        self.create_initial_agent_pop()
 
         # Data cataloging
         self.data_collector = mesa.DataCollector(
@@ -86,23 +91,23 @@ class UUVModel(mesa.Model):
         raw_agent_data = self.data_collector.get_agent_vars_dataframe()
         raw_model_data = self.data_collector.get_model_vars_dataframe()
         finished_count = 0
-        if not raw_agent_data.empty and not raw_model_data.empty:
-            # get agent data
-            current_step = raw_agent_data.index.get_level_values('Step').max() # get the max of the Step
-            is_finnsihed_step = raw_agent_data.xs(current_step, level="Step")['Finnished_agent_count'] # get the cross section of the newest step and Step
-            finished_count = is_finnsihed_step.sum() #return a sum of how many agents have finnished
-            print(f"Finished agents at step {current_step}: {finished_count}")
-       
-        if finished_count == len(self.agents):
-            # add the losers to a kill list to remove later
-            # self.remove_all_agents()
-            # print(len(self.agents))
-            self.current_generation+=1
-            print(f"Current Generation: {self.current_generation}")
-            self.score_GA()
-            self.create_next_generation(agent_type="GA")
-            # self.create_population()
-
+        if self.ga_model_active is False:
+            if not raw_agent_data.empty and not raw_model_data.empty:
+                # get agent data
+                current_step = raw_agent_data.index.get_level_values('Step').max() # get the max of the Step
+                is_finnsihed_step = raw_agent_data.xs(current_step, level="Step")['Finnished_agent_count'] # get the cross section of the newest step and Step
+                finished_count = is_finnsihed_step.sum() #return a sum of how many agents have finnished
+                print(f"Finished agents at step {current_step}: {finished_count}")
+        
+            if finished_count == len(self.agents):
+                # add the losers to a kill list to remove later
+                # self.remove_all_agents()
+                # print(len(self.agents))
+                self.current_generation+=1
+                print(f"Current Generation: {self.current_generation}")
+                self.score_GA()
+                self.create_next_generation(agent_type="GA")
+                # self.create_population()
 
     def agent_registration(self, agent_instance, pos, type_name):
         '''Inital Agent registration'''
@@ -192,7 +197,7 @@ class UUVModel(mesa.Model):
             self.save_list.clear()
             self.child_chromosones=child_chromosones
             
-    def create_initial_population(self):
+    def create_initial_agent_pop(self):
          """Create the intial populations for the model use only once"""
          for agent_type in self.all_agent_types:
             tmp_pos_list = self.population_position[agent_type]
@@ -221,4 +226,11 @@ class UUVModel(mesa.Model):
                 self.create_agent(type=agent_type, pos=pos, group_id=i, gen=self.current_generation, chromosone=self.child_chromosones[_])
                 print(f'CREATE AGENT->type: {agent_type}, pos: {pos}, group_id: {i}')  
 
+    def create_inital_model_pop(self, size):
+        population=[]
+        chosen_spawn=[]
+        for _ in range(size):
+            # individual= #chose random number of dectors, and their spawns
+            print("test")
+        return population
 

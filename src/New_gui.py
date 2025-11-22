@@ -166,7 +166,6 @@ class App(tk.Tk):
         else:
             print("no file selected")
 
-
     def draw_spawn_marker(self, x, y, color):
             """Draw a small circle marker on the main canvas and return the item id.
 
@@ -183,6 +182,7 @@ class App(tk.Tk):
                 fill=color, tags=("setup_marker",)
             )
             return item_id
+    
     def build_spawns_from_gui(self) -> dict:
         """
         Convert the GUI's `self.spawn_data` into the `spawns` dict expected by UUVModel.process_spawn_data.
@@ -371,8 +371,7 @@ class App(tk.Tk):
             mb.showwarning("Config saved with warnings", msg)
         else:
             mb.showinfo("Config saved", f"Config saved to {saved_path}")
-
-    
+  
     def load_config_dialog(self):
         file_path = fd.askopenfilename(title="Load spawn config", defaultextension=".json", filetypes=[("JSON", "*.json")])
         if not file_path:
@@ -550,7 +549,8 @@ class App(tk.Tk):
                         spawns=self.spawn_data,
                         map=self.current_map,
                         grid=self.map_grid,
-                        canvas=self.canvas
+                        canvas=self.canvas,
+                        viable_spawn=viable_spawn_area
                     )
                 except Exception as e:
                     tk.messagebox.showerror("Error creating model", f"Failed to create simulation model:\n{e}")
@@ -699,8 +699,9 @@ class App(tk.Tk):
                         spawn_point = (i, j)
                         if spawn_point not in viable_spawns:
                             viable_spawns.append(spawn_point)   
-                            print(f"({i}, {j})")
-            print(f"length {len(viable_spawns)}")
+                            # print(f"({i}, {j})")
+            # print(f"length {len(viable_spawns)}")
+            return viable_spawns
 
         return 0
     
