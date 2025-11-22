@@ -83,9 +83,7 @@ class UUVModel(mesa.Model):
             agent_reporters={"Finnished_agent_count": "is_finnished",
             "position": "position",
             "Agent type": "Agent_ID"},
-            model_reporters={"Step": lambda self: self.steps, "Total Agents": lambda self: len(self.agents)}
-            
-        
+            model_reporters={"Step": lambda self: self.steps, "Total Agents": lambda self: len(self.agents)}   
         )
 
     def step(self):
@@ -157,10 +155,14 @@ class UUVModel(mesa.Model):
             if chromosone is not None:
                 extra_params["chromosone"]=chromosone
 
-            target = parameters.get("target", None)
-            if target is not None:
-                extra_params["target"]=target
-          
+            # Temporary fix that dosnt work
+            if agent_type == "seeker":
+                target = parameters.get("target", None)
+                if target is not None:
+                    extra_params["target"]=target
+            else: 
+                target = None
+            
         
         AgentClass = self.AGENT_MAP.get(agent_type)
         if not AgentClass:
@@ -226,7 +228,7 @@ class UUVModel(mesa.Model):
                 for i in range(tmp_pop_count):
                     pos = tmp_pos_list[i]
                     print(f'CREATE AGENT->type: {agent_type}, pos: {pos}')
-                    self.create_agent(type=agent_type, pos=pos)
+                    self.create_agent(type=agent_type, pos=pos, target=self.targets)
 
     def create_next_generation(self, agent_type):     
         """Creates the next generation of for the GA agents, not the model"""
