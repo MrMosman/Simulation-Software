@@ -179,6 +179,8 @@ class UUVModel(mesa.Model):
             #"Agent_type": agent_type       
         }
         final_kwargs = {**agent_kwargs, **extra_params}
+
+        return AgentClass.create_agents(**final_kwargs)
     
     def score_GA(self):
         """Scores and orders the fitness function"""
