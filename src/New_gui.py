@@ -553,7 +553,7 @@ class App(tk.Tk):
                         map=self.current_map,
                         grid=self.map_grid,
                         canvas=self.canvas,
-                        viable_spawn=viable_spawn_area
+                        viable_spawn=viable_spawn_area,
                         targets=self.targets
                     )
                 except Exception as e:

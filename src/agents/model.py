@@ -158,9 +158,9 @@ class UUVModel(mesa.Model):
                 extra_params["chromosone"]=chromosone
 
             target = parameters.get("target", None)
-        else:
-            target = None
-           
+            if target is not None:
+                extra_params["target"]=target
+          
         
         AgentClass = self.AGENT_MAP.get(agent_type)
         if not AgentClass:
@@ -175,17 +175,10 @@ class UUVModel(mesa.Model):
             "map" : self.map, 
             "canvas": self.canvas,
             "grid": self.grid,
-            "target": target
             #"Agent ID": self.NI(),
             #"Agent_type": agent_type       
         }
         final_kwargs = {**agent_kwargs, **extra_params}
-
-        
-
-    def create_GA_population(self, agent_type):
-        """Create a random genome for a population"""
-        return NotImplementedError
     
     def score_GA(self):
         """Scores and orders the fitness function"""
