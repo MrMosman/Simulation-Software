@@ -1,3 +1,5 @@
+# Imports
+#=======================================
 import tkinter as tk
 from tkinter import filedialog as fd
 from tkinter import ttk
@@ -10,12 +12,16 @@ from agents import model
 from config import ConfigManager
 from tkinter import messagebox as mb
 from pathlib import Path
-
-# go through and fix all the button bindings as they are over righting each other
+#=========================================================================================================================
+#=========================================================================================================================
+#Main app class, this encompesses the entire GUI and essentially all front end functionality
 class App(tk.Tk):
     def __init__(self, title, size, parent_dir):
-        # main setup
-        super().__init__()
+    # Main App (parent) init setup, initalizes things like app dimensions, title, attributes like
+    # self variables, menus, buttons, etc.
+    #=====================================================================================================================
+    #=====================================================================================================================
+        super().__init__() #parent super init method that will be used by children classes to inherit init conditions
         self.app_height = size[1]
         self.app_width = size[0]
         self.title(title)
@@ -37,6 +43,7 @@ class App(tk.Tk):
         self.mouse_start_x = 0
         self.mouse_start_y = 0
         self.can_select = False
+        self.step_interval = 20  # ms, default step interval
 
         # Handle spawn position data
         # dont change this unless you tell me
@@ -50,16 +57,9 @@ class App(tk.Tk):
             agent_type : []
             for agent_type in self.all_agent_types
         }
-        #Add agent colors 
-        self.agent_type_colors = {
-            'Seeker': "#C60707",
-            'Target': "#0600AA",
-            'Detector': "#D209AA",
-            'GA': "#781204",
-        }
+       
         # normalized lookup (case-insensitive)
-        self._agent_type_colors_norm = {k.lower(): v for k, v in self.agent_type_colors.items()}
-
+        self._agent_type_colors_norm = self._build_agent_colors_from_model()
         # Agent model
         self.mesa_model = None
 
@@ -69,21 +69,19 @@ class App(tk.Tk):
         self.logo_icon = ImageTk.PhotoImage(self.logo_image)
         self.iconphoto(False, self.logo_icon)
 
-        # menus
-        self.menu = Menu(parent=self, size=(300, self.app_height),color='white')
-        self.file_menu = FileMenu(self, (self.app_width, 100), color='white')
-        #Create Agent Menu
+        # menus (Agent menu, File menu, etc.)
+        self.menu = Menu(parent=self, size=(300, self.app_height),color='')
+        self.file_menu = FileMenu(self, (self.app_width, 100), color='')
         self.agent_menu = AgentMenu(parent=self, size=(440, 200))
         self.canvas_frame = CanvasFrame(self, self.canvas_size)
         self.popup_window = None
 
-         # Create ConfigManager instance for saving/loading
+        # Create ConfigManager instance for saving/loading
         # Put configs in a local configs folder by default
         self.config_manager = ConfigManager(default_dir="configs", allow_overwrite=False)
 
-        # sub-menus
+        # sub-menus(General Frames menus)
         self.file_section = GeneralFrames(parent=self.menu, size=(440, 90), side='top', text='Map Selection')
-        #Pack the agent menu into the menu
         self.agent_menu.pack(in_=self.menu, side='top', padx=5, pady=5)
         self.sim_options_section = GeneralFrames(parent=self.menu, size=(440, 150), side='top', text='Simulation Options')
         self.sub_sim_section = tk.Frame(self.sim_options_section)
@@ -92,7 +90,6 @@ class App(tk.Tk):
         self.sub_config_section = tk.Frame(self.config_menu_section)
         self.sub_config_section.pack(expand=True)
         
-
         #sub-menu buttons
         self.file_button = tk.Button(self.file_section, text="🌐 Select", command=self.select_file, bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised")
         self.start_button = tk.Button(self.sub_sim_section, text="▶ Start", command=self.on_start_click, bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised")
@@ -106,34 +103,39 @@ class App(tk.Tk):
         self.analysis_button.grid(row=1, column=1, padx=10, pady=5)
         self.save_button = tk.Button(self.sub_config_section, text="Save Config", bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised", command=self.save_config_dialog)
         self.load_button = tk.Button(self.sub_config_section, text="Load Config", bg="#333333", fg="white", width=10, height=1, font=("Arial", 12), relief="raised",  command=self.load_config_dialog)
-        
-        
+        #Need to make an additional sub frame to stack the slider and the coord label correctly
+        self.file_menu_left_frame = tk.Frame(self.file_menu)
+        self.file_menu_left_frame.pack(side='left', fill='y', padx=10, pady=2)
+        #Pack the coord label into the sub container frame
+        self.coord_label = tk.Label(self.file_menu_left_frame, text="Grid Position: (x, y) | [lat, lon]", font=("Arial", 11), anchor="nw")
+        self.coord_label.pack(side='top', anchor='nw')
+        #Scale slider set up (also packed in sub frame)
+        self.step_scale = tk.Scale(
+            self.file_menu_left_frame,           # parent is now the left frame
+            from_=20,
+            to=800,
+            orient='horizontal',
+            label='Step (ms)',
+            resolution=20,
+            showvalue=True,
+            length=250,
+            command=self.set_step_interval
+        )
+        self.step_scale.set(20)
+        self.step_scale.pack(side='top', anchor='sw', pady=(0,6))
+    
+        # Grid button on the right of the sub frame
+        self.grid_button = tk.Button(self.file_menu, text="Select Grid", font=("Arial", 11), command=lambda: self.select_grid_button())
+        self.grid_button.pack(side='right', padx=10, pady=2)
         self.save_button.grid(row=0, column=0, padx=10, pady=5)
         self.load_button.grid(row=0, column=1, padx=10, pady=5)
         
-        
-        # labels in menus
-        self.uuv_info_label = tk.Label(self.file_menu, text="Seekers: 0", font=("Arial", 11), anchor="w", justify="left")
-        self.uuv_info_label.pack(fill="x", padx=10, pady=2)
-        
-        self.target_info_label = tk.Label(self.file_menu, text="Targets: 0", font=("Arial", 11), anchor="w", justify="left")
-        self.target_info_label.pack(fill="x", padx=10, pady=2)
-
-        self.coord_label = tk.Label(self.file_menu, text="Grid Position: (x, y) | [lat, lon]", font=("Arial", 11), anchor="w")
-        self.coord_label.pack(fill="x", padx=10, pady=2)
-
-        #TESTING FOR GRID SELECTION ADD SOMEWHERE LATER
-        self.grid_button = tk.Button(self.file_menu, text="Select Grid", font=("Arial", 11), anchor="w", justify="left", command=lambda: self.select_grid_button())
-        self.grid_button.pack(fill='x', padx=10, pady=2)
-
         # canvas settings
         self.canvas = CanvasMap(self.canvas_frame, (700,700))
 
         # control bindings
         self.canvas.bind("<Motion>", self.update_hover_info)
 
-        #Targets holder
-        self.targets = []
 
         # run
         self.mainloop()
@@ -143,20 +145,16 @@ class App(tk.Tk):
         self.can_select=True
         self.can_spawn=False
 
-    def update_agent_info_label(self, agent_type, label_widget):
-        """
-        Updates the given label_widget with the count and positions of the specified agent_type.
-        """
-        agents = self.spawn_data.get(agent_type, [])
-        count = len(agents)
-        if count == 0:
-            label_widget.config(text=f"{agent_type.title()}s: 0")
-            return
-        info_items = [f"{agent_type.title()}s: {count}"]
-        for idx, agent in enumerate(agents, 1):
-            info_items.append(f"#{idx}: {agent['pos']}")
-        label_widget.config(text=" | ".join(info_items))
-        
+    #=============================================================================================================================
+    #=============================================================================================================================
+    #App(parent) Methods:
+
+    def select_grid_button(self):
+        """updates the boolean values"""
+        self.can_select=True
+        self.can_spawn=False
+
+    # Select file method, called by map selection button
     def select_file(self):
         '''command for map file selection'''
         self.map_file_path = fd.askopenfilename(title="Selct a shapfile",
@@ -169,7 +167,7 @@ class App(tk.Tk):
         else:
             print("no file selected")
 
-
+    #Method to draw spawn markers when placing agents
     def draw_spawn_marker(self, x, y, color):
             """Draw a small circle marker on the main canvas and return the item id.
 
@@ -185,7 +183,10 @@ class App(tk.Tk):
                 x + radius, y + radius,
                 fill=color, tags=("setup_marker",)
             )
+            
             return item_id
+    
+    # Method to convert the GUI's spawn data into a spawns dict to then be passed to UUV Model
     def build_spawns_from_gui(self) -> dict:
         """
         Convert the GUI's `self.spawn_data` into the `spawns` dict expected by UUVModel.process_spawn_data.
@@ -256,6 +257,8 @@ class App(tk.Tk):
         spawns = {k: v for k, v in spawns.items() if v}
         return spawns
 
+    # Helper function to validate the map when loading configs, checks to see if placed agents are 
+    # being placed correctly
     def make_grid_validator(self):
         """
         Return a validate_fn(spawn_entry) -> (bool, Optional[str]) bound to current self.map_grid.
@@ -334,6 +337,9 @@ class App(tk.Tk):
 
         return _validator
 
+    # Method used to prompt the user to save the config i.e where to save it, choose the name, etc.
+    # Called by the "load config" button, uses the self.build_spawns_from_gui() helper function to
+    # build the payload within the .json which is later used to load agents back
     def save_config_dialog(self):
         """
         Prompt user for a filename and save current GUI spawn config using ConfigManager.
@@ -401,18 +407,11 @@ class App(tk.Tk):
         else:
             mb.showinfo("Load cancelled", "Configuration was not applied.")
 
+    # Function to actually apply the agents to the map and the model from the stored values in the
+    # .json file (payload), takes the cleaned spawns dict (from ConfigManager.load) and iterates through
     def apply_loaded_spawns(self, spawns: dict, wipe_existing: bool = True) -> bool:
         """
         Apply a loaded `spawns` dict to the GUI (place markers + update spawn_data and UI).
-
-        Args:
-            spawns: normalized dict returned by ConfigManager.load (category -> list of spawn entries).
-                    Each entry must have at least "type" and "pos" ([x, y] grid coords).
-            wipe_existing: if True, clear any existing GUI-placed agents before placing loaded ones.
-                        If False and there are existing placements, the user will be asked whether to overwrite.
-
-        Returns:
-            True if placement succeeded (or was applied), False otherwise.
         """
         # 1) Refuse if simulation is running
         if getattr(self, "is_running", False):
@@ -433,18 +432,14 @@ class App(tk.Tk):
                 return False
 
         if has_existing and wipe_existing:
-            # Use existing reset routine to clear UI + model (it is safe and comprehensive)
-            # reset_simulation stops animation, clears model and canvas items, and clears spawn_data / lists
             self.reset_simulation()
 
         # 4) Place loaded entries into spawn_data and draw markers
         cell_size = getattr(self.map_grid, "cell_size", None)
         if not cell_size:
-            # fallback: if there's no cell_size, cannot compute marker coords
             mb.showerror("Grid error", "Grid cell size unknown; cannot draw spawn markers.")
             return False
 
-        # Helper: find GUI key for a loaded type or create a new one if needed
         def find_type_key(t: str):
             if t in self.spawn_data:
                 return t
@@ -452,36 +447,27 @@ class App(tk.Tk):
             for key in list(self.spawn_data.keys()):
                 if key.lower() == t_lower:
                     return key
-            # not found: create a new key using the provided type string
             self.spawn_data.setdefault(t, [])
             return t
 
-        # iterate and add spawns
         for category, entries in spawns.items():
             for entry in entries:
                 t = entry.get("type")
                 pos = entry.get("pos")
                 if t is None or pos is None:
-                    # skip malformed entry
                     continue
 
-                # find matching key in spawn_data (case-insensitive)
                 type_key = find_type_key(t)
-
-                # create shallow copy to avoid mutating original loaded dict
                 placed = dict(entry)
 
-                # compute pixel coords for marker: grid_x * cell_size, grid_y * cell_size
                 try:
                     grid_x = int(pos[0])
                     grid_y = int(pos[1])
                     px = grid_x * cell_size
                     py = grid_y * cell_size
                 except Exception:
-                    # skip invalid pos
                     continue
 
-                # pick a color if provided, else from parent color map (case-insensitive)
                 color = placed.get("color")
                 if not color:
                     color = self._agent_type_colors_norm.get(str(t).lower())
@@ -493,8 +479,11 @@ class App(tk.Tk):
                     marker_id = self.draw_spawn_marker(px, py, color)
                     placed["marker_id"] = marker_id
                 except Exception:
-                    # still append spawn even if drawing fails
                     placed["marker_id"] = None
+
+                # If this is a detector, draw its dashed detection radius immediately
+                if str(t).lower() == "detector":
+                    placed["radius_id"] = self.draw_detector_radius(px, py, radius=20, marker_id=placed.get("marker_id"))
 
                 # append to GUI spawn_data
                 self.spawn_data.setdefault(type_key, []).append(placed)
@@ -508,14 +497,9 @@ class App(tk.Tk):
                 self.agent_menu.agent_display_data[key] = self.agent_menu.agent_display_data.get(key, 0) + 1
 
         self.agent_menu.update_agent_listbox()
-
-        # 6) Update info labels for the two shown types (use lowercased keys used by labels)
-        # Try to update known labels; update_agent_info_label expects the agent_type exactly as used earlier ('seeker'/'target')
-        self.update_agent_info_label('seeker', self.uuv_info_label)
-        self.update_agent_info_label('target', self.target_info_label)
-
         return True
 
+    #Method for creating the map
     def create_map(self):
         '''command for map/grid creation'''
         self.current_map = MapControl(
@@ -528,6 +512,7 @@ class App(tk.Tk):
         self.canvas.config(background="#0A7005")
         # self.canvas.unbind("<Button-1>")
 
+    # Method to start and pause the simulation, used by the start button
     def on_start_click(self):
         """Start / pause the simulation and create the mesa_model safely."""
         self.can_spawn = False
@@ -553,8 +538,13 @@ class App(tk.Tk):
                     map=self.current_map, 
                     grid=self.map_grid,
                     canvas=self.canvas,
-                    targets=self.targets
                     )
+            else:
+                # Model exists - add any new agents that were spawned while paused
+                self.add_new_agents_to_model()
+                
+            #Clear spawn markers and detector radius rings after model is created
+            self.canvas.delete("setup_marker")
             self.is_running = True
             # Switch Start button to a Pause / Running state
             self.start_button.config(state="normal", bg="#333333", text="⏸ Running...", command=self.on_start_click)
@@ -571,7 +561,48 @@ class App(tk.Tk):
             self.start_button.config(state="normal", bg="#333333", text="▶ Start", command=self.on_start_click)
             self.canvas_frame.config(bg="#333333")
             self.is_running = False
+
+    # Helper function used by on_start_click, this method checks if any new agents were added
+    # since we paused the sim and then appends them to the model (only the newly added agents)
+    def add_new_agents_to_model(self):
+        """Add agents spawned during pause to the existing model."""
+        if self.mesa_model is None:
+            return
+        
+        # Track which spawn positions already have agents in the model
+        # We'll check the actual agent positions, not the tracking dict
+        existing_spawn_positions = set()
+        
+        # Get all agents and their spawn positions
+        for agent in self.mesa_model.agents:
+            if hasattr(agent, 'spawn'):
+                # spawn is stored as [x, y] so convert to tuple for set
+                existing_spawn_positions.add(tuple(agent.spawn))
+        
+        # Find new agents in spawn_data that aren't in the model yet
+        for agent_type, spawn_list in self.spawn_data.items():
+            for spawn_entry in spawn_list:
+                pos = tuple(spawn_entry['pos'])
+                
+                # Check if this spawn position already has an agent
+                if pos not in existing_spawn_positions:
+                    # This is a new agent - create it
+                    print(f"Creating new {agent_type} at {pos}")
+                    
+                    if agent_type == "GA":
+                        # GA agents create multiple instances per position
+                        group_id = len([a for a in self.mesa_model.agents 
+                                    if hasattr(a, 'spawn') and tuple(a.spawn) == pos])
+                        for _ in range(self.mesa_model.POP_SIZE):
+                            self.mesa_model.create_agent(type=agent_type, pos=list(pos), group_id=group_id)
+                    else:
+                        self.mesa_model.create_agent(type=agent_type, pos=list(pos))
+                    
+                    # Mark this position as having an agent now
+                    existing_spawn_positions.add(pos)
     
+    # Method to reset the simulation, comprehensive multiple layer checks and clears including
+    # the agent spawn data, lists, data collector, and canvas items like drawn ovals. Called by reset button.
     def reset_simulation(self):
         """Fully stop and clear the running simulation and UI state."""
         # 1) Stop animation
@@ -606,21 +637,46 @@ class App(tk.Tk):
             self.spawn_data[agent_type] = []
 
         # 5) Reset labels / buttons
-        self.uuv_info_label.config(text="Seekers: 0")
-        self.target_info_label.config(text="Targets: 0")
+
         self.coord_label.config(text="Grid Position: (x, y) | [lat, lon]")
         self.start_button.config(state="normal", bg="#333333", text="▶ Start", fg="white", command=self.on_start_click)
         self.canvas_frame.config(bg="#333333")
 
+    # Method to actually animate the model via stepping through the model
     def animate(self):
         '''animate the screen'''
         if self.is_running and self.mesa_model is not None:
-            self.animation_job = self.after(50, self.animate)
             self.mesa_model.step()
             # step through the model
+            self.animation_job = self.after(self.step_interval, self.animate)
         else:
             self.animation_job = None
 
+    # Helper function to change the current step interval (argument taken by the animation job)
+    # in order to more easily set the current step speed of the program i.e how fast the sim moves
+    def set_step_interval(self, ms):
+        """Set animation interval in ms. If running, reschedule next tick immediately."""
+        try:
+            ms = int(ms)
+        except Exception:
+            return
+        # clamp to a reasonable minimum
+        ms = max(10, ms)
+        self.step_interval = ms
+
+        if self.is_running:
+            # cancel pending after and schedule a new one with updated interval
+            if self.animation_job:
+                try:
+                    self.after_cancel(self.animation_job)
+                except Exception:
+                    pass
+                self.animation_job = None
+            # schedule next tick with new interval
+            self.animation_job = self.after(self.step_interval, self.animate)
+
+    # Method used to create popup windows, currently takes argument "choice" and will either open
+    # UAV select window or the analysis window
     def create_popup(self,choice):
         '''create the popup window'''
         if self.popup_window is None and choice == 1:
@@ -632,6 +688,7 @@ class App(tk.Tk):
             self.can_select=False
             self.can_spawn=True
 
+    # Helper method to snap the mouse to the grid (because the grid uses cells)
     def snap_to_grid(self, x, y):
         '''Snaps the mouse to the grid'''
         if self.map_grid is not None:
@@ -645,6 +702,9 @@ class App(tk.Tk):
             grid_x, grid_y = int(x), int(y)
         return snapped_x, snapped_y, grid_x, grid_y
 
+    # Helper method to determine if there are overlapping items on the lpaded map
+    # in this case, checks to see if the item overlaps the map itself, if so it returns true
+    # because that means the item is within the map
     def is_inside_map(self, x, y):
         '''checks if inside the canvas bounds'''
         overlapping_items = self.canvas.find_overlapping(x, y, x, y)
@@ -654,6 +714,8 @@ class App(tk.Tk):
                 return True
         return False
 
+    # Method to take find current cursor locaiton on map, highlights current grid and also updates
+    # the coord label with the current location of the cursor
     def update_hover_info(self, event):
         '''updates the hover info and shows the current selected grid'''
         if self.map_grid is None:
@@ -697,15 +759,67 @@ class App(tk.Tk):
 
         return 0
     
+            # Helper function used when spawning detectors to ensure their radius is created too
+    def draw_detector_radius(self, px, py, radius=20, marker_id=None):
+        """
+        Draw a dashed detection-radius ring at pixel coords (px,py).
+        Returns the canvas item id of the ring or None on failure.
+
+        - `radius` in pixels (default matches DetectorAgent.radius = 20).
+        - if `marker_id` is provided the method will attempt to keep the marker above the ring.
+        """
+        if not hasattr(self, "canvas") or self.canvas is None:
+            return None
+        try:
+            radius_id = self.canvas.create_oval(
+                px - radius, py - radius,
+                px + radius, py + radius,
+                outline='white', dash=(3, 3), tags=('detector',)
+            )
+            # Ensure ring exists and keep marker visible above it if provided
+            try:
+                self.canvas.lift(radius_id)
+                if marker_id is not None:
+                    self.canvas.lift(marker_id)
+            except Exception:
+                pass
+            return radius_id
+        except Exception:
+            return None
         
+    #Helper function to grab agent colors from their class and use them on the sim
+    def _build_agent_colors_from_model(self) -> dict:
+        """
+        Extract agent colors from the actual agent classes in the model.
+        Returns a normalized dict {agent_type_lower: color_hex}
+        """
+        colors = {}
+        
+        # Access the AGENT_MAP from the model
+        agent_map = model.UUVModel.AGENT_MAP
+        
+        for agent_type, agent_class in agent_map.items():
+            # Get the DEFAULT_COLOR class attribute if it exists
+            color = getattr(agent_class, 'DEFAULT_COLOR', None)
+            if color:
+                colors[agent_type.lower()] = color
+        return colors
+#End of App (parent) methods
+#=============================================================================================================================================
+#=============================================================================================================================================
+#Below are various frames / menus that are used within the main app window:
+
+#Menu frame, used on the right side of the sim, holds most general frames such as map selection
+# agent menu, simulation settings, etc.
 class Menu(tk.Frame):
-    """Handles the menu for the UAV Agents"""
+    """Handles the menu for the other sub menus (right side of the window)"""
     def __init__(self, parent, size, color):
         super().__init__(parent, width=size[0], height=size[1], bg=color, border=5)
         self.padding = 5
         self.pack(side='right', padx=self.padding, pady=self.padding)
         self.pack_propagate(False)
 
+# File menu (bottom of screen), holds the hover cursor location and the step interval slider
 class FileMenu(tk.Frame):
     '''Handles the file menu and output'''
     def __init__(self, parent, size, color):
@@ -714,17 +828,19 @@ class FileMenu(tk.Frame):
         self.pack(side='bottom', padx=self.padding, pady=self.padding)
         self.pack_propagate(False)
 
+# Canvas Frame, the canvas is where the map is loaded, this is simply the border frame that holds the canvas
 class CanvasFrame(tk.Frame):
     '''controls the frame canvas that the simulation runs in'''
     def __init__(self, parent, size):
-        super().__init__(parent, background='#333333', width=size[0], height=size[1], relief="raised", border=5)
+        super().__init__(parent, background="#333333", width=size[0], height=size[1], relief="raised", border=5)
         self.padding = 5
         self.parent = parent
         self.width = size[0]
         self.height = size[1]
         self.pack(side='left', padx=self.padding, pady=self.padding)
         self.pack_propagate(False)
-        
+
+# Canvas Map, the actual canvas that is drawn on for the simulation
 class CanvasMap(tk.Canvas):
     '''Handles the physcal canvas to draw on for simulation'''
     def __init__(self, parent, size):
@@ -769,6 +885,10 @@ class CanvasMap(tk.Canvas):
         # print(f"all spawn selections {all_rect_ids}")
         return all_rect_ids
     
+
+# General Frames, this is a class that is used as a general outline for many menus, it's meant to not
+# be very specific functionality wise and is more so used for simple menus like the file selection and
+# config menu
 class GeneralFrames(tk.Frame):
     '''general frames in the menus'''
     def __init__(self, parent, size, color=None, side=None, anchor=None, text=None):
@@ -782,6 +902,8 @@ class GeneralFrames(tk.Frame):
             self.file_bar = tk.Frame(self, bg="black", height=2)
             self.file_bar.pack(side="top", fill="x", pady=(0, 8))
 
+# Agent Menu, a more specialized menu sued for the agent section, holds the "add agent" button and
+# the agent listbox, implemented this way because it allows for more complex implementations and methods
 class AgentMenu(tk.Frame):
     def __init__(self, parent, size,color=None):
         super().__init__(parent, width=size[0], height=size[1], bg=color, border=5,bd=2, relief='solid')
@@ -828,7 +950,7 @@ class AgentMenu(tk.Frame):
         # Call parent's popup creation method
         self.parent.create_popup(choice)
 
-    #Moved from App class
+    # Method to update the agent listbox when new agents are spawned or removed
     def update_agent_listbox(self):
         """Refresh the agent Listbox with current agent data."""
         self.agent_listbox.delete(0, tk.END)
@@ -842,7 +964,9 @@ class AgentMenu(tk.Frame):
             entry = f"{name:<{name_width}} {agent_type:<{type_width}} {count:>{count_width}}"
             self.agent_listbox.insert(tk.END, entry)
             self.agent_listbox_keys.append((name, agent_type))
-    #Moved from App class
+
+    # Method to add an agent to the display dictonary, then calls the update listbox method to display it
+    # within the listbox
     def add_agent_to_display(self, name, agent_type):
         """Add or update agent in the display dictionary."""
         key = (name, agent_type)
@@ -852,6 +976,7 @@ class AgentMenu(tk.Frame):
             self.agent_display_data[key] = 1
         self.update_agent_listbox()
 
+    # Currently unused method that will be used later 
     def _on_listbox_double_click(self, event):
         """Left button double click handler. Used to wipe selected agent via listbox"""
         try:
@@ -867,6 +992,8 @@ class AgentMenu(tk.Frame):
         self.agent_listbox.selection_set(idx)
         name, agent_type = self.agent_listbox_keys[idx]
 
+    # Method called when listbox entry is double right clicked, opens the agent detail popup
+    # (a window that displays the selected agents positions), via the method  self._open_agent_detail_popup
     def _on_listbox_rdouble_click(self, event):
         """Right-button double-click handler. Determine clicked index from event and open popup."""
         try:
@@ -885,6 +1012,7 @@ class AgentMenu(tk.Frame):
         count = self.agent_display_data.get((name, agent_type), 0)
         self._open_agent_detail_popup(name, agent_type, count)
 
+    # Method used to open the agent detail popup, called by the double right click handler function
     def _open_agent_detail_popup(self, name, agent_type, count):
         """Opens a popup window showing agent details (positions)."""
         popup = tk.Toplevel(self)
@@ -910,6 +1038,8 @@ class AgentMenu(tk.Frame):
         btn = tk.Button(popup, text="Close", command=popup.destroy, bg="#333333", fg="white", width=10, height=1, font=("Consolas", 12), relief="raised")
         btn.pack(pady=(0,8), padx=(0,8), anchor="se")
 
+    # Helper function used by the agent detail popup window, grabs all the position data of a 
+    # selected agent from the listbox, specifically all agents with the same name and type
     def _get_positions_from_spawn_data(self, name, agent_type):
         positions = []
         spawn_dict = getattr(self.parent, "spawn_data", {})
@@ -922,6 +1052,10 @@ class AgentMenu(tk.Frame):
                 if spawn_name == name:
                     positions.append(spawn.get("pos"))
         return positions
+    
+# Analysis Window class, this window is used by the analysis button to call the open_popup() method
+# and then open this window, this is its own class because it's functionality and implementation will
+# be tailored specifically for analysis of the sim, which will require many self contained methods
 class AnalysisWindow(tk.Toplevel):
     """Analysis popup window"""
     def __init__(self, parent, title, size, canvas):
@@ -1001,11 +1135,34 @@ class AnalysisWindow(tk.Toplevel):
         self.tab_cost = ttk.Frame(self.notebook)
         self.notebook.add(self.tab_cost, text='Cost')
 
-
+    # Helper close window function
     def close_window(self):
       self.parent.popup_window = None
       self.destroy()
     
+# Window that appears when doubleclicking an agent on the map used for setting
+# variables such as target and cost
+class AgentInfoWindow(tk.Toplevel):
+    """ Window that appears when doubleclicking an agent on the map
+        used for setting variables such as target and cost"""
+    def __init__(self, parent, title, size, canvas):
+        super().__init__(parent)
+        self.parent = parent
+        self.title(title)
+        self.geometry(f'{size[0]}x{size[1]}')
+        self.attributes('-topmost', True)
+        self.resizable(False, False)
+        self.canvas = canvas
+        self.protocol("WM_DELETE_WINDOW", self.close_popup)
+
+    def close_popup(self):
+        '''Close the popup'''
+        self.parent.popup_window = None
+        self.destroy()
+    ...
+
+# UAV Select Window, window that pops up when adding agents (via open_popup() method), implemented 
+# as its own class for easier implementation of specific functionality
 class UAVSelectWindow(tk.Toplevel):
     '''UAV selecting popup window'''
     # Keep in the mind the grid pos and the way agents navigate is flipped
@@ -1024,8 +1181,12 @@ class UAVSelectWindow(tk.Toplevel):
         # dont change this unless you tell me
         # or have good reason
         self.agent_type_attacker = model.UUVModel.AGENT_CATEGORIES['attacker']
-        self.agent_type_defender = model.UUVModel.AGENT_CATEGORIES['defender']
-
+        _exclude = {"cuuv"}
+        self.agent_type_defender = [
+            t for t in model.UUVModel.AGENT_CATEGORIES.get("defender", [])
+            if t.lower() not in _exclude
+]
+        
         # Setup button controles
         self.mode_var = tk.StringVar(self)
         self.mode_var.set("Attacker")
@@ -1068,6 +1229,7 @@ class UAVSelectWindow(tk.Toplevel):
         self.spawning_state = tk.BooleanVar(self)
         self.spawning_state.set(False)
 
+    # Method to update the dropdown dynamically
     def update_dropdown(self):
         '''Update the dropdown menu'''
         self.menu = self.type_dropdown["menu"]
@@ -1087,6 +1249,7 @@ class UAVSelectWindow(tk.Toplevel):
                        
         self.selected_agent_type.set(self.options[0])
 
+    # Method to toggle the attacker / defender button, then calls update dropdown to set accordingly
     def toggle_mode(self):
         '''Toggle between the Attacker and Defender UAVs'''
         if self.mode_var.get() == "Attacker":
@@ -1095,6 +1258,8 @@ class UAVSelectWindow(tk.Toplevel):
             self.mode_var.set("Attacker")
         self.update_dropdown()
 
+    # Function used to enable / disable spawning, functionality tied to the
+    # "spawn" button
     def start_spawning(self):
         '''Enable spawning'''
         self.spawning_state.set(True)
@@ -1104,25 +1269,37 @@ class UAVSelectWindow(tk.Toplevel):
         self.canvas.bind("<Button-1>", self.place_agent, add='+')
         self.parent.can_spawn = True
 
+    # Method to actually place agents on the canvas and store their data
     def place_agent(self, event):
         '''Place agents on the canvas and store instructions'''
+        # Checks if we are not in the spawning state, if not, we cant spawn
         if not self.spawning_state.get():
             print("NOT IN SPAWNING STATE-debug")
             return
-        
+        #Checks if we are inside the map, if not, then we cant spawn (for now, perhaps specialized land agents will be added)
         if self.parent.is_inside_map(event.x, event.y) is False:
-            print("DEBUG- ADD CHECK TO DETERMIN IF CAN SPAWN ON LAND FOR CERTAIN AGENTS")
+            print("DEBUG- ADD CHECK TO DETERMINE IF CAN SPAWN ON LAND FOR CERTAIN AGENTS")
             return
         
+        # Snap our cursor to the grid and then apply this position to a variable "grid_pos"
         snap_x, snap_y, grid_x, grid_y = self.parent.snap_to_grid(event.x, event.y)
         grid_pos = (grid_x, grid_y)
-        # add new agent
+
+        # Grab the agent type from the selected agent type (from the dropdown)
         agent_type = self.selected_agent_type.get()
+
+        #Obtain the agent name from the selcted entry name (what was entered in the type field)
+        # if no name was provided, default to the agent type i.e "seeker", "detector", etc.
         agent_name = self.name_entry.get() if self.name_entry.get() else agent_type
-        #Obtain colors for agent from parent
+
+        #Obtain colors for agent from parent (which are initialized in the App(parent) init)
         parent_colors = getattr(self.parent, "_agent_type_colors_norm", {})
+        # Try and obtain the color associated with the agent, if there is none, default to green
         color_for_type = parent_colors.get(str(agent_type).lower(), "green")
 
+        # Setup our new agents data, this is a dict that holds various data for our agents and is
+        # used by our ConfigManager when loading and saving .jsons, the "type" and "pos" are important
+        # data points, the rest are considered optional metadata
         new_agent_data = {
             'type': agent_type,
             'pos': grid_pos,
@@ -1131,25 +1308,29 @@ class UAVSelectWindow(tk.Toplevel):
             }
         
 
-        if agent_type == "target":
-            self.parent.targets.append(new_agent_data['pos'])
+       
         if agent_type in self.parent.spawn_data:
+            # if this agent type is valid, append the agents data to the parents parents spawn 
+            # data at the agent_type index
             self.parent.spawn_data[agent_type].append(new_agent_data)
             # Update the agent display when a new agent is added
             self.agent_menu.add_agent_to_display(agent_name, agent_type)
-            self.parent.update_agent_info_label('seeker', self.parent.uuv_info_label)
-            self.parent.update_agent_info_label('target', self.parent.target_info_label)
         else:
             print(f"ERROR: placed unknown agent type {agent_type}")
             return
 
-        # DEBUG REMOVE
-        # print(self.selected_agent_type.get())
+        # Set up a market id to be stored by each new agent, this will be unique to each placed agent
+        # and will serve as a good way to distinguish agents in the future
         marker_id = self.parent.draw_spawn_marker(snap_x, snap_y, color_for_type)
+        # Add this marker id to the new agent data dict, will be taken as optional metadata in the .json
         new_agent_data['marker_id'] = marker_id
         
-        #print(f"Placed {agent_type} '{agent_name}' at grid {grid_pos} with data: {new_agent_data}")
 
+        # If this is a detector, draw its detection radius ring immediately so user sees it when placed.
+        if str(agent_type).lower() == "detector":
+         new_agent_data['radius_id'] = self.parent.draw_detector_radius(snap_x, snap_y, radius=20, marker_id=marker_id)
+
+    # Function to disbale the spawning state
     def stop_spawning(self):
         '''disable spawning'''
         self.spawning_state.set(False)
@@ -1158,6 +1339,7 @@ class UAVSelectWindow(tk.Toplevel):
         # self.canvas.unbind("<Button-1>")
         self.parent.can_spawn = False
 
+    # Method to close the popup
     def close_popup(self):
         '''Close the popup with rules'''
         self.stop_spawning()

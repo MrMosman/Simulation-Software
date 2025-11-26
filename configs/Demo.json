@@ -1,60 +1,72 @@
 {
   "schema_version": "1.0",
-  "created_at": "2025-11-14T20:19:42.477678Z",
+  "created_at": "2025-11-20T17:02:13.212724Z",
   "generator": "ConfigManager",
   "spawns": {
     "attacker": [
       {
         "type": "seeker",
         "pos": [
-          42,
-          6
+          40,
+          4
         ],
         "name": "seeker",
-        "color": "#C60707",
-        "marker_id": 139
+        "color": "#FD0202",
+        "marker_id": 136
       },
       {
         "type": "seeker",
         "pos": [
-          46,
-          11
-        ],
-        "name": "seeker",
-        "color": "#C60707",
-        "marker_id": 157
-      },
-      {
-        "type": "detector",
-        "pos": [
-          40,
-          21
-        ],
-        "name": "detector",
-        "color": "#D209AA",
-        "marker_id": 361
-      },
-      {
-        "type": "GA",
-        "pos": [
-          33,
+          23,
           5
         ],
-        "name": "GA",
-        "color": "#781204",
-        "marker_id": 316
+        "name": "seeker",
+        "color": "#FD0202",
+        "marker_id": 165
       }
     ],
     "defender": [
       {
         "type": "target",
         "pos": [
-          41,
-          15
+          14,
+          5
         ],
         "name": "target",
-        "color": "#0600AA",
-        "marker_id": 258
+        "color": "#020EFD",
+        "marker_id": 223
+      },
+      {
+        "type": "target",
+        "pos": [
+          49,
+          4
+        ],
+        "name": "target",
+        "color": "#020EFD",
+        "marker_id": 314
+      },
+      {
+        "type": "detector",
+        "pos": [
+          18,
+          5
+        ],
+        "name": "detector",
+        "color": "#FFFFFF",
+        "marker_id": 379,
+        "radius_id": 380
+      },
+      {
+        "type": "detector",
+        "pos": [
+          45,
+          4
+        ],
+        "name": "detector",
+        "color": "#FFFFFF",
+        "marker_id": 437,
+        "radius_id": 438
       }
     ]
   }
