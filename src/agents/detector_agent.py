@@ -27,7 +27,8 @@ class DetectorAgent(mesa.Agent):
 
         # varibles
         self.radius = 20
-
+        self.is_triggerd = False
+    
         # tkinter gui
         self.map = map
         self.canvas = canvas
@@ -43,17 +44,16 @@ class DetectorAgent(mesa.Agent):
         # self.scatter = None
 
     def step(self):
-        # Detection = self.detect()
+        Detection = self.detect()
         # self.update_plot()
         if not self.Used:
-            return #make the damn thing shut up
             # print("Detection made by detector at position:", Detection.position)
-            # Detection = self.detect()
-            # if Detection:
-            #     self.Used = True
+            Detection = self.detect()
+            if Detection:
+                self.Used = True
                 
-                #Comment out to show the prob vs distance plot without spawning CUUVs
-                #self.model.create_agent(type = "CUUV", pos = self.spawn, target = Detection)
+                # Comment out to show the prob vs distance plot without spawning CUUVs
+                self.model.create_agent(type = "CUUV", pos = self.spawn, target = Detection)
 
     def detect(self):
         """Creates a pop up window"""
@@ -70,6 +70,7 @@ class DetectorAgent(mesa.Agent):
 
                     if np.random.rand() < p:
                         print("Detected with probability:", p)
+                        self.is_triggerd = True
                         return agent
                     else:
                         print("Failed to detect (prob:", p, ")")

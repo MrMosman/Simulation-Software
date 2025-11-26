@@ -20,19 +20,20 @@ class UUVAgent(mesa.Agent):                         #AS OF 11/14/25 Mike has add
     def __init__(self, model, spawn, map, canvas, grid, target, *args, **kwargs):
         # remember to add target back to this
         super().__init__(model, *args, **kwargs)
+
         # Target and spawn
-        self.spawn = spawn
-        
+        self.spawn = spawn     
         self.Speed = 1  # This value is multiplied by the added unit movement in x and y per step
         self.status = True  # for cuuv to kill the UUV >:}
+        self.hard_code_dest = [9, 33]
 
         # self.dest = target
         if target is not None:
             self.dest = target 
         else:
-            self.dest = [9, 33]         # sets a hard coded destination if there is no target, I (Mike) was using this for debugging.
+            self.dest = self.hard_code_dest       # sets a hard coded destination if there is no target, I (Mike) was using this for debugging.
         
-        print(spawn, " Debugging spawn")
+        # print(spawn, " Debugging spawn")
         self.position = [grid[spawn[1]][spawn[0]].pos_x, grid[spawn[1]][spawn[0]].pos_y]
         # self.target = [grid[target[0]][target[1]].pos_x, grid[target[0]][target[1]].pos_y]
         self.target = [[self.dest[1]], [self.dest[0]]] #hard code testing
@@ -56,23 +57,21 @@ class UUVAgent(mesa.Agent):                         #AS OF 11/14/25 Mike has add
         self.ROW, self.COL = self.grid.shape
         self.grid = grid
         self.path = None
-        # print(f'R={self.ROW}, C={self.COL}')
         self.a_star_search()
-        # print(self.path[0])
+
         if self.path is None:
+            print("this is working")
             tmp = self.grid[self.dest[1]][self.dest[0]]
             self.next_target = tmp
         else:
             tmp = self.path[0]
-            self.next_target = self.grid[tmp[0]][tmp[1]]
-        
-        # print(self.next_target)
-    
+            self.next_target = self.grid[tmp[1]][tmp[0]]
+            
     def getTargetDir(self):
+        """Gets the Target Direction"""
         target_x = self.next_target.pos_x
         target_y = self.next_target.pos_y
-        print(f'target: {target_x}x{target_y}') #DEBUGGGG
-        # print(f'pos:{self.position}')
+
         new_x = target_x - self.position[0]
         new_y = target_y - self.position[1]
         new_vector = np.array([new_x, new_y])
@@ -87,6 +86,7 @@ class UUVAgent(mesa.Agent):                         #AS OF 11/14/25 Mike has add
             if not self.path:
                 print("target is destroyed")
                 unit_vector = [0, 0]
+                self.reset()
                 return unit_vector
             else:
                 self.path.pop(0)
@@ -138,7 +138,6 @@ class UUVAgent(mesa.Agent):                         #AS OF 11/14/25 Mike has add
             # else:
             #     print(f"No temp data found for agent at position {self.position}")   
   
-
     def a_star_search(self):
         """A* seach algorithum"""
                 # Check if the source and destination are valid
@@ -228,7 +227,7 @@ class UUVAgent(mesa.Agent):                         #AS OF 11/14/25 Mike has add
             print("Failed to find the destination cell")
 
     def trace_path(self, cell_details, dest):
-        """traces the movement of the a*"""
+        """Trace the movement of the a*"""
         # print("The Path is ")
         path = []
         row = dest[0]
@@ -279,3 +278,12 @@ class UUVAgent(mesa.Agent):                         #AS OF 11/14/25 Mike has add
                     pass
         except Exception:
             pass
+
+    def reset(self):
+        """Reset the agent for another run"""
+        print("i am reseting")
+        spawn = self.spawn
+        self.position = [self.grid[spawn[1]][spawn[0]].pos_x, self.grid[spawn[1]][spawn[0]].pos_y]
+        tmp = self.path[0]
+        self.next_target = self.grid[tmp[0]][tmp[1]]
+        self.status = True

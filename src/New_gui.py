@@ -710,9 +710,11 @@ class App(tk.Tk):
                             viable_spawns.append(spawn_point)   
                             # print(f"({i}, {j})")
             # print(f"length {len(viable_spawns)}")
-        return viable_spawns
-    
-        
+        if len(viable_spawns) == 0:
+            viable_spawns = None
+        else:
+            return viable_spawns
+         
 class Menu(tk.Frame):
     """Handles the menu for the UAV Agents"""
     def __init__(self, parent, size, color):
@@ -937,6 +939,7 @@ class AgentMenu(tk.Frame):
                 if spawn_name == name:
                     positions.append(spawn.get("pos"))
         return positions
+
 class AnalysisWindow(tk.Toplevel):
     """Analysis popup window"""
     def __init__(self, parent, title, size, canvas):

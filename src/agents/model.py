@@ -2,9 +2,6 @@ import tkinter as tk
 import numpy as np
 import pandas as pd
 import mesa 
-
-
-
 from . import agent, detector_agent, search_agent, CounterUUVAgent
 
 
@@ -70,7 +67,9 @@ class UUVModel(mesa.Model):
 
         # model GA assignments
         self.ga_model_active = True
-        self.ga_model_pop = self.create_inital_model_pop(self.POP_SIZE)
+        self.ga_model_pop = None
+        if self.viable_spawns is not None:
+            self.ga_model_pop = self.create_inital_model_pop(self.POP_SIZE)
         self.det_cost = 50
 
         # agent GA assignments
@@ -109,7 +108,7 @@ class UUVModel(mesa.Model):
                 # print(len(self.agents))
                 self.current_generation+=1
                 print(f"Current Generation: {self.current_generation}")
-                self.score_GA()
+                self.score_ga_agents()
                 self.create_next_generation(agent_type="GA")
                 # self.create_population()
 
@@ -147,11 +146,11 @@ class UUVModel(mesa.Model):
             if group_id is not None:
                 extra_params["group_id"]=group_id
 
-            current_gen = parameters["gen"]
+            current_gen = parameters.get("gen", None)
             if current_gen is not None:
                 extra_params["generation"]=current_gen
 
-            chromosone = parameters["chromosone"]
+            chromosone = parameters.get("chromosone", None)
             if chromosone is not None:
                 extra_params["chromosone"]=chromosone
 
@@ -182,7 +181,7 @@ class UUVModel(mesa.Model):
 
         return AgentClass.create_agents(**final_kwargs)
     
-    def score_GA(self):
+    def score_ga_agents(self):
         """Scores and orders the fitness function"""
         ga_class = self.AGENT_MAP.get('GA')
         ga_agent_set = self.agents_by_type.get(ga_class)
@@ -252,7 +251,7 @@ class UUVModel(mesa.Model):
     def create_model_agent(self):
         """Creates the model GA agents"""
         num_detector = self.random.randrange(1, 3)
-        my_lil_dude_list = list()
+        detector_list = list()
         tot_cost = 50*num_detector
         chosen_spawn=[]
 
@@ -264,9 +263,12 @@ class UUVModel(mesa.Model):
                     sel_spawn = True 
 
             lil_dude = self.create_agent(type="detector", pos=spawn)
-            my_lil_dude_list.append(lil_dude)
+            detector_list.append(lil_dude)
         # get merge working
-        individual = {"#_detc": num_detector, "agent_detc": my_lil_dude_list, "tot_cost": tot_cost}
+        individual = {"#_detc": num_detector, "agent_det": detector_list, "tot_cost": tot_cost}
         return individual
+
+    def score_ga_model(self):
+        """Scores the GA for the model agents, do not use for GA agents"""
 
 
