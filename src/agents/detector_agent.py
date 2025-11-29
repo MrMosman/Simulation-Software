@@ -52,7 +52,7 @@ class DetectorAgent(mesa.Agent):
         self.Used = False
 
         #plt.ion()               # plotting stuff
-        self.fig, self.ax = plt.subplots()
+        # self.fig, self.ax = plt.subplots()
         self.scatter = None
 
     def step(self):
