@@ -1,4 +1,21 @@
-# src/agents/target_agent.py
+# --- Project Information ---
+# Project: UUV Simulation Framework
+# Version: 1.0.0
+# Date: November 2025
+# 
+# --- Authors and Contributors ---
+# Primary:
+# - Gunner Cook-Dumas (SCRUM Manager, Backend, Agent, Model, and GA Stucture)
+# - Justin Mosman (developer)
+# - Michael Cardinal (developer)
+# 
+# Secondary:
+# - Lauren Milne (SCRUM Product Owner)
+# 
+# --- Reviewers/Bosses ---
+# - Prof. Lance Fiondella, ECE, University of Massachusetts Dartmouth
+# - Prof. Hang Dinh, CIS, Indiana University South Bend
+
 import mesa
 import numpy as np
 

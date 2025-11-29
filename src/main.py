@@ -6,15 +6,15 @@
 # --- Authors and Contributors ---
 # Primary:
 # - Gunner Cook-Dumas (SCRUM Manager, Backend, Agent, Model, and GA Stucture)
-# - [Contributor 1 Full Name] (Role/Primary Contribution)
-# - [Contributor 2 Full Name] (Role/Primary Contribution)
+# - Justin Mosman (developer)
+# - Michael Cardinal (developer)
 # 
 # Secondary:
-# - [Name] (Role/Affiliation - e.g., Algorithm Advisor)
+# - Lauren Milne (SCRUM Product Owner)
 # 
 # --- Reviewers/Bosses ---
 # - Prof. Lance Fiondella, ECE, University of Massachusetts Dartmouth
-# - [Prof. Full Name], [Department], [Institution]
+# - Prof. Hang Dinh, CIS, Indiana University South Bend
 
 from agents.model import UUVModel
 import map
