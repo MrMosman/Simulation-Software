@@ -122,8 +122,6 @@ class DetectorAgent(mesa.Agent):
 
         plt.pause(0.001)
 
-=========
-
     def cleanup(self):
         """Remove this agent's canvas items (oval and detection radius)."""
         try:

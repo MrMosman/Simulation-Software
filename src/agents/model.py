@@ -114,8 +114,6 @@ class UUVModel(mesa.Model):
                 self.create_next_generation(agent_type="GA")
                 # self.create_population()
 
->>>>>>>>> Temporary merge branch 2
-
     def agent_registration(self, agent_instance, pos, type_name):
         '''Inital Agent registration'''
         # increase population for that agent type
@@ -430,10 +428,8 @@ class UUVModel(mesa.Model):
         individual = {"#_detc": num_detector, "agent_detc": my_lil_dude_list, "tot_cost": tot_cost}
         return individual
 
-
-
-                fitness_score = agent.calculate_fitness()
-                print(f"Agent ID: {agent.unique_id}, Fitness Score: {fitness_score}")
+        # fitness_score = agent.calculate_fitness()
+        # print(f"Agent ID: {agent.unique_id}, Fitness Score: {fitness_score}")                
             
     def clear_agents(self):
         #This methods first gathers references to each agent, and calls the cleanup method on each agent. 
