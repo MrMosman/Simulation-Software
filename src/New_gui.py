@@ -752,7 +752,11 @@ class App(tk.Tk):
         self.canvas.create_rectangle(x1, y1, x2, y2, outline="white", width=2, tags="hover_rect")
 
     def viable_spawn_select(self):
+        """Selects the viable spawn areas for the detectors"""
         rect_ids = self.canvas.viable_spawn_pos()
+        if len(rect_ids) == 0:
+            raise Exception("Create a grid spawn locations")
+        
         # print(f"rects: {rect_ids}")
         viable_spawns = list()
         for id in rect_ids:
