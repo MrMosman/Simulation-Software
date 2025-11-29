@@ -104,6 +104,7 @@ class UUVAgent(mesa.Agent):                         #AS OF 11/14/25 Mike has add
                 print("target is destroyed")
                 #Set our unit vector to 0 to stop movement
                 unit_vector = [0, 0]
+                self.reset()
                 return unit_vector
             else:
                 #Pops the wayoint from the path
@@ -318,7 +319,7 @@ class UUVAgent(mesa.Agent):                         #AS OF 11/14/25 Mike has add
 
     #Helper function of the A* algorithm to trace the movement
     def trace_path(self, cell_details, dest):
-        """traces the movement of the a*"""
+        """Trace the movement of the a*"""
         # print("The Path is ")
         path = []
         row = dest[0]
@@ -374,3 +375,12 @@ class UUVAgent(mesa.Agent):                         #AS OF 11/14/25 Mike has add
                     pass
         except Exception:
             pass
+
+    def reset(self):
+        """Reset the agent for another run"""
+        print("i am reseting")
+        spawn = self.spawn
+        self.position = [self.grid[spawn[1]][spawn[0]].pos_x, self.grid[spawn[1]][spawn[0]].pos_y]
+        tmp = self.path[0]
+        self.next_target = self.grid[tmp[0]][tmp[1]]
+        self.status = True

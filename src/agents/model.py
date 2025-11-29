@@ -30,7 +30,7 @@ class UUVModel(mesa.Model):
     MUTATION_RATE = 0.1
     AGENT_CHROMESOME_COMMAND = {'L': 1, 'R': 2, 'U': 3, 'D': 4}
     
-    def __init__(self, spawns, map, canvas, grid, targets, viable_spawn,*args, seed = None, rng = None, **kwargs):
+    def __init__(self, spawns, map, canvas, grid, viable_spawn,*args, seed = None, rng = None, **kwargs):
         super().__init__(*args, seed=seed, rng=rng, **kwargs)
         # setup mesa controls
 
@@ -66,7 +66,9 @@ class UUVModel(mesa.Model):
 
         # model GA assignments
         self.ga_model_active = True
-        self.ga_model_pop = self.create_inital_model_pop(self.POP_SIZE)
+        self.ga_model_pop = None
+        if self.viable_spawns is not None:
+            self.ga_model_pop = self.create_inital_model_pop(self.POP_SIZE)
         self.det_cost = 50
 
         # agent GA assignments
@@ -81,9 +83,6 @@ class UUVModel(mesa.Model):
             "Agent type": "Agent_ID"},
             model_reporters={"Step": lambda self: self.steps, "Total Agents": lambda self: len(self.agents)}   
         )
-        #self.score_GA()
-
-
 
     def step(self):
         """advance model by one step"""
@@ -110,7 +109,7 @@ class UUVModel(mesa.Model):
                 # print(len(self.agents))
                 self.current_generation+=1
                 print(f"Current Generation: {self.current_generation}")
-                self.score_GA()
+                self.score_ga_agents()
                 self.create_next_generation(agent_type="GA")
                 # self.create_population()
 
@@ -156,11 +155,11 @@ class UUVModel(mesa.Model):
             if group_id is not None:
                 extra_params["group_id"]=group_id
 
-            current_gen = parameters.get("gen", None)  # Fixed: added .get
+            current_gen = parameters.get("gen", None)
             if current_gen is not None:
                 extra_params["generation"] = current_gen
 
-            chromosone = parameters.get("chromosone", None)  # Fixed: added .get
+            chromosone = parameters.get("chromosone", None)
             if chromosone is not None:
                 extra_params["chromosone"] = chromosone
             
@@ -180,7 +179,7 @@ class UUVModel(mesa.Model):
             "spawn": spawn_pos,  # Fixed: was "n" : 1 which is wrong
             "map": self.map, 
             "canvas": self.canvas,
-            "grid": self.grid
+            "grid": self.grid,     
         }
         final_kwargs = {**agent_kwargs, **extra_params}
 
@@ -228,7 +227,6 @@ class UUVModel(mesa.Model):
         #print(f"=== END GET_TARGET_POSITIONS ===\n")
         
         return positions
-
 
     def check_collisions(self):
         """
@@ -331,12 +329,6 @@ class UUVModel(mesa.Model):
                 except Exception as e:
                     print(f"CUUV collision check error: {e}")
 
-                
-    #def NI(self):
-    #    """Next ID generator for agents"""
-    #    self.NextID += 1
-    #    return self.NextID 
-
     def create_GA_population(self, agent_type):
         """Create a random genome for a population"""
         return NotImplementedError
@@ -387,7 +379,7 @@ class UUVModel(mesa.Model):
                 for i in range(tmp_pop_count):
                     pos = tmp_pos_list[i]
                     print(f'CREATE AGENT->type: {agent_type}, pos: {pos}')
-                    self.create_agent(type=agent_type, pos=pos, target=self.targets)
+                    self.create_agent(type=agent_type, pos=pos)
 
     def create_next_generation(self, agent_type):     
         """Creates the next generation of for the GA agents, not the model"""
@@ -407,11 +399,11 @@ class UUVModel(mesa.Model):
             print(individual)
             population.append(individual)
         return population
-    
+
     def create_model_agent(self):
         """Creates the model GA agents"""
         num_detector = self.random.randrange(1, 3)
-        my_lil_dude_list = list()
+        detector_list = list()
         tot_cost = 50*num_detector
         chosen_spawn=[]
 
@@ -423,14 +415,11 @@ class UUVModel(mesa.Model):
                     sel_spawn = True 
 
             lil_dude = self.create_agent(type="detector", pos=spawn)
-            my_lil_dude_list.append(lil_dude)
+            detector_list.append(lil_dude)
         # get merge working
-        individual = {"#_detc": num_detector, "agent_detc": my_lil_dude_list, "tot_cost": tot_cost}
+        individual = {"#_detc": num_detector, "agent_det": detector_list, "tot_cost": tot_cost}
         return individual
-
-        # fitness_score = agent.calculate_fitness()
-        # print(f"Agent ID: {agent.unique_id}, Fitness Score: {fitness_score}")                
-            
+    
     def clear_agents(self):
         #This methods first gathers references to each agent, and calls the cleanup method on each agent. 
         #It then clears the model's agent container, grid backing, population trackers, and data collector.

@@ -30,7 +30,8 @@ class DetectorAgent(mesa.Agent):
 
         # varibles
         self.radius = 20
-
+        self.is_triggerd = False
+    
         # tkinter gui
         self.color = kwargs.get('color', self.DEFAULT_COLOR)
         self.map = map

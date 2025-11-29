@@ -145,15 +145,6 @@ class App(tk.Tk):
         self.can_select=True
         self.can_spawn=False
 
-    #=============================================================================================================================
-    #=============================================================================================================================
-    #App(parent) Methods:
-
-    def select_grid_button(self):
-        """updates the boolean values"""
-        self.can_select=True
-        self.can_spawn=False
-
     # Select file method, called by map selection button
     def select_file(self):
         '''command for map file selection'''
@@ -538,8 +529,7 @@ class App(tk.Tk):
                         map=self.current_map,
                         grid=self.map_grid,
                         canvas=self.canvas,
-                        viable_spawn=viable_spawn_area,
-                        targets=self.targets
+                        viable_spawn=viable_spawn_area
                     )
                 except Exception as e:
                     tk.messagebox.showerror("Error creating model", f"Failed to create simulation model:\n{e}")
@@ -768,9 +758,11 @@ class App(tk.Tk):
                             viable_spawns.append(spawn_point)   
                             # print(f"({i}, {j})")
             # print(f"length {len(viable_spawns)}")
-        return viable_spawns
-    
-            # Helper function used when spawning detectors to ensure their radius is created too
+        if len(viable_spawns) == 0:
+            viable_spawns = None
+        else:
+            return viable_spawns
+             # Helper function used when spawning detectors to ensure their radius is created too
     def draw_detector_radius(self, px, py, radius=20, marker_id=None):
         """
         Draw a dashed detection-radius ring at pixel coords (px,py).
@@ -1196,7 +1188,7 @@ class UAVSelectWindow(tk.Toplevel):
         self.agent_type_defender = [
             t for t in model.UUVModel.AGENT_CATEGORIES.get("defender", [])
             if t.lower() not in _exclude
-]
+            ]
         
         # Setup button controles
         self.mode_var = tk.StringVar(self)
@@ -1317,8 +1309,7 @@ class UAVSelectWindow(tk.Toplevel):
             'name': agent_name,
             'color': color_for_type
             }
-        if agent_type == "target":
-            self.parent.targets.append(new_agent_data['pos'])
+      
         if agent_type in self.parent.spawn_data:
             # if this agent type is valid, append the agents data to the parents parents spawn 
             # data at the agent_type index
