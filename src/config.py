@@ -1,3 +1,5 @@
+# Imports
+#===============================================
 from __future__ import annotations
 from pathlib import Path
 from datetime import datetime
@@ -5,8 +7,9 @@ from typing import Optional, List, Tuple, Any
 import json
 
 from agents import model
-
-
+#=====================================================================================================================
+#=====================================================================================================================
+# ConfigManager class, used to house config specific functionality
 class ConfigManager:
     def __init__(
         self,
@@ -51,10 +54,12 @@ class ConfigManager:
         # a quick sanity flag to indicate manager is ready for save/load actions
         self.ready = True
 
+    #Helper function to return a list of agent types from the model
     def known_agent_types(self) -> List[str]:
         """Return a list of agent type names discovered from the model (may be empty)."""
         return list(self._known_agent_types)
 
+    # Function to return a default filepath for saving the configs 
     def default_filepath(self, name: Optional[str] = None) -> Path:
         """
         Return a timestamped default file path for saving a config.
@@ -65,6 +70,7 @@ class ConfigManager:
         filename = f"{base}_{timestamp}{self.file_ext}"
         return self.config_dir / filename
 
+    # Helper function to return a normalized position as a list of two integers
     def _normalize_pos(self, pos: Any) -> Tuple[bool, Any]:
         """
         Normalize a position value to a list of two ints.
@@ -82,6 +88,8 @@ class ConfigManager:
             return False, "pos coordinates must be integers"
         return True, [x, y]
 
+    # Function to take the spawns structure and normalize it so that it can be used correctly
+    # while perserving the metadata as well
     def _validate_and_normalize_spawns(self, spawns: Any) -> Tuple[dict, List[str]]:
         """
         Validate the top-level spawns structure and normalize entries.
@@ -147,7 +155,8 @@ class ConfigManager:
                 normalized[category] = normalized_list
 
         return normalized, warnings
-
+    
+    # Save function that is used to save the "spawns" dict to the json
     def save(self, spawns: dict, path: Optional[str | Path] = None, validate: bool = True) -> Tuple[Path, List[str]]:
         """
         Save `spawns` to JSON on disk.
@@ -207,6 +216,7 @@ class ConfigManager:
 
         return out_path, warnings
     
+    # Load function to load the data from the config and return its contents
     def load(self, path, validate_fn=None, remove_invalid: bool = True, allow_unknown_types: bool = False):
         """
         Load a spawn config file and return (spawns_dict, warnings, metadata).
