@@ -545,7 +545,8 @@ class App(tk.Tk):
                         map=self.current_map,
                         grid=self.map_grid,
                         canvas=self.canvas,
-                        viable_spawn=viable_spawn_area
+                        viable_spawn=viable_spawn_area,
+                        animator=self
                     )
                 except Exception as e:
                     tk.messagebox.showerror("Error creating model", f"Failed to create simulation model:\n{e}")
@@ -783,6 +784,7 @@ class App(tk.Tk):
         else:
             return viable_spawns
              # Helper function used when spawning detectors to ensure their radius is created too
+    
     def draw_detector_radius(self, px, py, radius=20, marker_id=None):
         """
         Draw a dashed detection-radius ring at pixel coords (px,py).

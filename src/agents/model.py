@@ -48,7 +48,7 @@ class UUVModel(mesa.Model):
     MUTATION_RATE = 0.1
     AGENT_CHROMESOME_COMMAND = {'L': 1, 'R': 2, 'U': 3, 'D': 4}
     
-    def __init__(self, spawns, map, canvas, grid, viable_spawn,*args, seed = None, rng = None, **kwargs):
+    def __init__(self, spawns, map, canvas, grid, viable_spawn, animator, *args, seed = None, rng = None, **kwargs):
         super().__init__(*args, seed=seed, rng=rng, **kwargs)
         # setup mesa controls
 
@@ -59,6 +59,7 @@ class UUVModel(mesa.Model):
         self.map = map
         self.grid = grid.grid
         self.viable_spawns = viable_spawn
+        self.animator = animator
 
         # retrieve data types
         # flatten catagories
@@ -96,11 +97,12 @@ class UUVModel(mesa.Model):
 
         # Data cataloging
         self.data_collector = mesa.DataCollector(
-            agent_reporters={"Finnished_agent_count": "is_finnished",
-            "position": "position",
-            "Agent type": "Agent_ID",
-            "is_complete": "is_complete"},
-            model_reporters={"Step": lambda self: self.steps, "Total Agents": lambda self: len(self.agents)}   
+            agent_reporters={"Finnished_agent_count": "is_finnished", 
+                             "position": "position",
+                             "Agent type": "Agent_ID",
+                             "is_complete": "is_complete"},
+            model_reporters={"Step": lambda self: self.steps, 
+                             "Total Agents": lambda self: len(self.agents)}   
         )
 
     def step(self):
@@ -128,7 +130,6 @@ class UUVModel(mesa.Model):
                 print(f"Current Generation: {self.current_generation}")
                 self.score_ga_agents()
                 self.create_next_generation(agent_type="GA")
-
         else: # for the GA model
             if not raw_agent_data.empty and not raw_model_data.empty:
                 # get agent data
@@ -142,8 +143,8 @@ class UUVModel(mesa.Model):
                 # add the losers to a kill list to remove later
                 self.current_generation+=1
                 print(f"Current Generation: {self.current_generation}")
-                self.score_ga_agents()
-                self.create_next_generation(agent_type="GA")
+                self.reset_sim()
+                
 
 
     def agent_registration(self, agent_instance, pos, type_name):
@@ -450,8 +451,18 @@ class UUVModel(mesa.Model):
             self.child_chromosones=child_chromosones
 
     def reset_sim(self):
+        self.animator.on_start_click()
         self.clear_agents()
-        self.create_inital_model_pop()
+        self.create_initial_agent_pop()
+        self.data_collector = mesa.DataCollector(
+            agent_reporters={"Finnished_agent_count": "is_finnished", 
+                             "position": "position",
+                             "Agent type": "Agent_ID",
+                             "is_complete": "is_complete"},
+            model_reporters={"Step": lambda self: self.steps, 
+                             "Total Agents": lambda self: len(self.agents)}   
+        )
+        self.animator.on_start_click()
 
     def clear_agents(self):
         #This methods first gathers references to each agent, and calls the cleanup method on each agent. 
