@@ -1,5 +1,21 @@
-# Imports
-#=======================================
+# --- Project Information ---
+# Project: UUV Simulation Framework
+# Version: 1.0.0
+# Date: November 2025
+# 
+# --- Authors and Contributors ---
+# Primary:
+# - Gunner Cook-Dumas (SCRUM Manager, Backend, Agent, Model, and GA Stucture)
+# - Justin Mosman (developer)
+# - Michael Cardinal (developer)
+# 
+# Secondary:
+# - Lauren Milne (SCRUM Product Owner)
+# 
+# --- Reviewers/Bosses ---
+# - Prof. Lance Fiondella, ECE, University of Massachusetts Dartmouth
+# - Prof. Hang Dinh, CIS, Indiana University South Bend
+
 import tkinter as tk
 from tkinter import filedialog as fd
 from tkinter import ttk
@@ -736,7 +752,11 @@ class App(tk.Tk):
         self.canvas.create_rectangle(x1, y1, x2, y2, outline="white", width=2, tags="hover_rect")
 
     def viable_spawn_select(self):
+        """Selects the viable spawn areas for the detectors"""
         rect_ids = self.canvas.viable_spawn_pos()
+        if len(rect_ids) == 0:
+            raise Exception("Create a grid spawn locations")
+        
         # print(f"rects: {rect_ids}")
         viable_spawns = list()
         for id in rect_ids:

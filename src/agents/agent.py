@@ -1,3 +1,21 @@
+# --- Project Information ---
+# Project: UUV Simulation Framework
+# Version: 1.0.0
+# Date: November 2025
+# 
+# --- Authors and Contributors ---
+# Primary:
+# - Gunner Cook-Dumas (SCRUM Manager, Backend, Agent, Model, and GA Stucture)
+# - Justin Mosman (developer)
+# - Michael Cardinal (developer)
+# 
+# Secondary:
+# - Lauren Milne (SCRUM Product Owner)
+# 
+# --- Reviewers/Bosses ---
+# - Prof. Lance Fiondella, ECE, University of Massachusetts Dartmouth
+# - Prof. Hang Dinh, CIS, Indiana University South Bend
+
 import tkinter as tk
 import numpy as np
 import heapq
@@ -21,9 +39,10 @@ class UUVAgent(mesa.Agent):                         #AS OF 11/14/25 Mike has add
         super().__init__(model, *args, **kwargs)
         #Spawn variable
         self.spawn = spawn
-        
+        self.is_complete = False
         self.Speed = 1  # This value is multiplied by the added unit movement in x and y per step
         self.status = True  # for cuuv to kill the UUV >:}
+
         #Calculate cell size (used for pathfinding)
         if len(grid) > 0 and len(grid[0]) > 1:
             self.cell_size = grid[0][1].pos_x - grid[0][0].pos_x
@@ -66,14 +85,14 @@ class UUVAgent(mesa.Agent):                         #AS OF 11/14/25 Mike has add
         # Check if agent has a path, if not fallback to the direct destination (either the initalized taget)
         # or the hard coded fallback cell
         if self.path is None or len(self.path) == 0:
-            print(f"No path found or path empty, using direct destination")
+            # print(f"No path found or path empty, using direct destination")
             tmp = self.grid[self.dest[0]][self.dest[1]]
             self.next_target = tmp
-            print(f"Next target (direct): pos_x={tmp.pos_x}, pos_y={tmp.pos_y}")
+            # print(f"Next target (direct): pos_x={tmp.pos_x}, pos_y={tmp.pos_y}")
         else:
             tmp = self.path[0]
             self.next_target = self.grid[tmp[0]][tmp[1]]
-            print(f"Next target from path[0]: {tmp} -> pos_x={self.next_target.pos_x}, pos_y={self.next_target.pos_y}")
+            # print(f"Next target from path[0]: {tmp} -> pos_x={self.next_target.pos_x}, pos_y={self.next_target.pos_y}")
 
         # Debug
         #print(f"=== END SEEKER INIT DEBUG ===\n")
@@ -101,7 +120,7 @@ class UUVAgent(mesa.Agent):                         #AS OF 11/14/25 Mike has add
         if(magnitude == 0):
             if not self.path:
                  #Check if the taget is destroyed 
-                print("target is destroyed")
+                # print("target is destroyed")
                 #Set our unit vector to 0 to stop movement
                 unit_vector = [0, 0]
                 self.reset()
@@ -112,7 +131,7 @@ class UUVAgent(mesa.Agent):                         #AS OF 11/14/25 Mike has add
                 # Defensive: check if path is empty before accessing
                 if not self.path or len(self.path) == 0:
                     #If path is empty return 0 (to stop movement)
-                    print("No path available")
+                    # print("No path available")
                     return [0, 0]
                 #If waypoints remain, set the next target to the waypoint
                 tmp = self.path[0]
@@ -138,7 +157,8 @@ class UUVAgent(mesa.Agent):                         #AS OF 11/14/25 Mike has add
 
         # NO TARGETS REMAIN - STOP MOVEMENT
         if not targets:
-            print(f"Agent {self.unique_id} stopping - no valid targets remain")
+            # print(f"Agent {self.unique_id} stopping - no valid targets remain")
+            self.is_complete = True
             #Change color to indicate idle state
             try:
                 self.canvas.itemconfig(self.oval, fill="gray")
@@ -192,7 +212,7 @@ class UUVAgent(mesa.Agent):                         #AS OF 11/14/25 Mike has add
         
         # Check if we're still moving
         if new_direction is None or (new_direction[0] == 0 and new_direction[1] == 0):
-            print(f"Agent {self.unique_id} stopped - no valid direction")
+            # print(f"Agent {self.unique_id} stopped - no valid direction")
             return
         
         # Obtain our new coordinates via our speed * our direction

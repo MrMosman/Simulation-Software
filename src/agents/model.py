@@ -1,3 +1,21 @@
+# --- Project Information ---
+# Project: UUV Simulation Framework
+# Version: 1.0.0
+# Date: November 2025
+# 
+# --- Authors and Contributors ---
+# Primary:
+# - Gunner Cook-Dumas (SCRUM Manager, Backend, Agent, Model, and GA Stucture)
+# - Justin Mosman (developer)
+# - Michael Cardinal (developer)
+# 
+# Secondary:
+# - Lauren Milne (SCRUM Product Owner)
+# 
+# --- Reviewers/Bosses ---
+# - Prof. Lance Fiondella, ECE, University of Massachusetts Dartmouth
+# - Prof. Hang Dinh, CIS, Indiana University South Bend
+
 import tkinter as tk
 import numpy as np
 import pandas as pd
@@ -65,7 +83,7 @@ class UUVModel(mesa.Model):
         self.save_list = list()
 
         # model GA assignments
-        self.ga_model_active = True
+        self.ga_model_active = True # set to True to enable model GA, False for GA agents
         self.ga_model_pop = None
         if self.viable_spawns is not None:
             self.ga_model_pop = self.create_inital_model_pop(self.POP_SIZE)
@@ -80,7 +98,8 @@ class UUVModel(mesa.Model):
         self.data_collector = mesa.DataCollector(
             agent_reporters={"Finnished_agent_count": "is_finnished",
             "position": "position",
-            "Agent type": "Agent_ID"},
+            "Agent type": "Agent_ID",
+            "is_complete": "is_complete"},
             model_reporters={"Step": lambda self: self.steps, "Total Agents": lambda self: len(self.agents)}   
         )
 
@@ -95,7 +114,7 @@ class UUVModel(mesa.Model):
         #print("Model Stepping (Debugging)")
         raw_model_data = self.data_collector.get_model_vars_dataframe()
         finished_count = 0
-        if self.ga_model_active is False:
+        if self.ga_model_active is False: # for the GA agents
             if not raw_agent_data.empty and not raw_model_data.empty:
                 # get agent data
                 current_step = raw_agent_data.index.get_level_values('Step').max() # get the max of the Step
@@ -105,13 +124,27 @@ class UUVModel(mesa.Model):
         
             if finished_count == len(self.agents):
                 # add the losers to a kill list to remove later
-                # self.remove_all_agents()
-                # print(len(self.agents))
                 self.current_generation+=1
                 print(f"Current Generation: {self.current_generation}")
                 self.score_ga_agents()
                 self.create_next_generation(agent_type="GA")
-                # self.create_population()
+
+        else: # for the GA model
+            if not raw_agent_data.empty and not raw_model_data.empty:
+                # get agent data
+                current_step = raw_agent_data.index.get_level_values('Step').max() # get the max of the Step
+                is_finnsihed_step = raw_agent_data.xs(current_step, level="Step")['is_complete'] # get the cross section of the newest step and Step
+                if is_finnsihed_step.sum() >= 1:
+                    finished_count = 1
+                print(f"Finished agents at step {current_step}: {finished_count}")
+        
+            if finished_count == 1:
+                # add the losers to a kill list to remove later
+                self.current_generation+=1
+                print(f"Current Generation: {self.current_generation}")
+                self.score_ga_agents()
+                self.create_next_generation(agent_type="GA")
+
 
     def agent_registration(self, agent_instance, pos, type_name):
         '''Inital Agent registration'''
@@ -328,38 +361,6 @@ class UUVModel(mesa.Model):
                         
                 except Exception as e:
                     print(f"CUUV collision check error: {e}")
-
-    def create_GA_population(self, agent_type):
-        """Create a random genome for a population"""
-        return NotImplementedError
-    
-    def score_GA(self):
-        """Scores and orders the fitness function"""
-        ga_class = self.AGENT_MAP.get('GA')
-        ga_agent_set = self.agents_by_type.get(ga_class)
-        if ga_agent_set:
-            ga_population = list(ga_agent_set)
-            ga_population = sorted(ga_population, key= lambda x:x.calculate_fitness(), reverse=False)
-            # DEBUG
-            self.save_list = ga_population[:2] #get best
-            for agent in ga_population[2:]:
-                agent.kill_your_self_now()
-                # Call the method here as well to get the score
-                # print(f"Agent ID: {agent.unique_id}, Fitness Score: {agent.fitness}")
-            
-            # breed the parents
-            child_chromosones = list()
-            dad=self.save_list[0]
-            mom=self.save_list[1]
-            child_chromosones.append(dad.chromosone)
-            child_chromosones.append(mom.chromosone)
-            for _ in range(self.POP_SIZE-2): #subtract 2 for the parents
-                child_chromosones.append(dad.mate(mom))
-                # print(f"{_} child chromesone{dad.mate(mom)}")
-            dad.kill_your_self_now()
-            mom.kill_your_self_now()
-            self.save_list.clear()
-            self.child_chromosones=child_chromosones
             
     def create_initial_agent_pop(self):
          """Create the intial populations for the model use only once"""
@@ -420,6 +421,38 @@ class UUVModel(mesa.Model):
         individual = {"#_detc": num_detector, "agent_det": detector_list, "tot_cost": tot_cost}
         return individual
     
+    def score_ga_agents(self):
+        """Scores and orders the fitness function"""
+        ga_class = self.AGENT_MAP.get('GA')
+        ga_agent_set = self.agents_by_type.get(ga_class)
+        if ga_agent_set:
+            ga_population = list(ga_agent_set)
+            ga_population = sorted(ga_population, key= lambda x:x.calculate_fitness(), reverse=False)
+            # DEBUG
+            self.save_list = ga_population[:2] #get best
+            for agent in ga_population[2:]:
+                agent.kill_your_self_now()
+                # Call the method here as well to get the score
+                # print(f"Agent ID: {agent.unique_id}, Fitness Score: {agent.fitness}")
+            
+            # breed the parents
+            child_chromosones = list()
+            dad=self.save_list[0]
+            mom=self.save_list[1]
+            child_chromosones.append(dad.chromosone)
+            child_chromosones.append(mom.chromosone)
+            for _ in range(self.POP_SIZE-2): #subtract 2 for the parents
+                child_chromosones.append(dad.mate(mom))
+                # print(f"{_} child chromesone{dad.mate(mom)}")
+            dad.kill_your_self_now()
+            mom.kill_your_self_now()
+            self.save_list.clear()
+            self.child_chromosones=child_chromosones
+
+    def reset_sim(self):
+        self.clear_agents()
+        self.create_inital_model_pop()
+
     def clear_agents(self):
         #This methods first gathers references to each agent, and calls the cleanup method on each agent. 
         #It then clears the model's agent container, grid backing, population trackers, and data collector.
