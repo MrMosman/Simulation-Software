@@ -45,7 +45,8 @@ class UUVModel(mesa.Model):
     # Genetic Algorithm parameters
     POP_SIZE = 10
     GENERATIONS = 50
-    MUTATION_RATE = 0.1
+    MUTATION_RATE = 0.5
+    AGENT_COST=50
     AGENT_CHROMESOME_COMMAND = {'L': 1, 'R': 2, 'U': 3, 'D': 4}
     
     def __init__(self, spawns, map, canvas, grid, viable_spawn, animator, *args, seed = None, rng = None, **kwargs):
@@ -87,7 +88,7 @@ class UUVModel(mesa.Model):
         self.ga_model_active = True # set to True to enable model GA, False for GA agents
         self.ga_model_pop = None
         if self.viable_spawns is not None:
-            self.ga_model_pop = self.create_inital_model_pop(self.POP_SIZE)
+            self.ga_model_pop = self.create_inital_model_pop()
         self.det_cost = 50
 
         # agent GA assignments
@@ -143,9 +144,8 @@ class UUVModel(mesa.Model):
                 # add the losers to a kill list to remove later
                 self.current_generation+=1
                 print(f"Current Generation: {self.current_generation}")
-                self.reset_sim()
-                
-
+                self.reset_sim() 
+                self.create_next_model_generation()  
 
     def agent_registration(self, agent_instance, pos, type_name):
         '''Inital Agent registration'''
@@ -393,10 +393,10 @@ class UUVModel(mesa.Model):
                 self.create_agent(type=agent_type, pos=pos, group_id=i, gen=self.current_generation, chromosone=self.child_chromosones[_])
                 print(f'CREATE AGENT->type: {agent_type}, pos: {pos}, group_id: {i}')  
 
-    def create_inital_model_pop(self, pop_size):
+    def create_inital_model_pop(self):
         """Creates the inital model ga population, not the same as create_intital_agent_pop"""
         population=[]
-        for _ in range(pop_size):                      
+        for _ in range(self.POP_SIZE):                      
             individual = self.create_model_agent()         
             print(individual)
             population.append(individual)
@@ -404,9 +404,9 @@ class UUVModel(mesa.Model):
 
     def create_model_agent(self):
         """Creates the model GA agents"""
-        num_detector = self.random.randrange(1, 3)
+        num_detector = self.random.randrange(3, 5)
         detector_list = list()
-        tot_cost = 50*num_detector
+        tot_cost = self.AGENT_COST*num_detector
         chosen_spawn=[]
 
         for _ in range(num_detector):
@@ -418,10 +418,95 @@ class UUVModel(mesa.Model):
 
             lil_dude = self.create_agent(type="detector", pos=spawn)
             detector_list.append(lil_dude)
-        # get merge working
+
         individual = {"#_detc": num_detector, "agent_det": detector_list, "tot_cost": tot_cost}
         return individual
     
+    def create_next_model_generation(self):
+        """Create the next GA model population"""
+        pop_sorted=self.score_model_ga()
+        new_pop=list()
+        if not pop_sorted or len(pop_sorted)<2:
+            print("Error: not enough agents")
+            raise Exception("Make more agents for the mating")
+        
+        parent_a=pop_sorted[0]
+        parent_b=pop_sorted[1]
+        new_pop.append(parent_a)
+        new_pop.append(parent_b)
+
+        for _ in range(self.POP_SIZE-2):
+            child=self.model_mate(par_a=parent_a, par_b=parent_b)
+            new_pop.append(child)
+            print(f"{_}: {child}")
+ 
+    def score_model_ga(self):
+        """Sorts the model ga agents"""
+        if self.ga_model_pop is None:
+            print("Error: Model GA population not initialized")
+            raise Exception("GA population failure")
+        
+        model_pop = sorted(self.ga_model_pop, key=lambda individual: self.calulate_fitness(individual=individual), reverse=False)
+        return model_pop
+
+    def model_mate(self, par_a, par_b):
+        """Mates the parents, no mutation"""
+        detector_list=list()
+        tot_cost=0
+        # choose the amount of detectors
+        num_detector=self.random.choice([par_a["#_detc"], par_b["#_detc"]])
+        total_spawn_location=list()
+        for agent in par_a["agent_det"]:
+            total_spawn_location.append(agent.spawn)
+        for agent in par_b["agent_det"]:
+            total_spawn_location.append(agent.spawn)
+
+        # select which detectors to bring to child
+        already_chosen=list()        
+        for i in range(num_detector):
+            sel=False
+            selected_det=None
+            while sel is False:
+                chosen_list=self.random.choice([par_a["agent_det"], par_b["agent_det"]])
+                selected_det=self.random.choice(chosen_list)
+                if selected_det not in already_chosen:
+                    sel = True
+            spawn=selected_det.spawn
+            print(f"position {spawn}")
+            detector = self.create_agent(type="detector", pos=spawn)
+            detector_list.append(detector)
+
+        # mutate some things
+        if self.MUTATION_RATE > self.random.random():
+            number = self.random.randint(-2, 2)
+            tmp_num_detector = num_detector + number
+            # loose a agent
+            if tmp_num_detector < num_detector:
+                tmp = num_detector-tmp_num_detector
+                for i in range(tmp):
+                    detector_list.pop()
+            # gain a agent
+            else:
+                tmp=tmp_num_detector-num_detector
+                for _ in range(tmp):
+                    sel_spawn = False
+                    while sel_spawn is False:
+                        spawn=self.random.choice(self.viable_spawns)
+                        if spawn not in total_spawn_location:
+                            sel_spawn = True 
+                    new_detc = self.create_agent(type="detector", pos=spawn)
+                    detector_list.append(new_detc)
+    
+        # Get total cost
+        tot_cost=self.AGENT_COST*num_detector
+        child={"#_detc": num_detector, "agent_det": detector_list, "tot_cost": tot_cost}
+        return child
+
+    def calulate_fitness(self, individual):
+        """Calulates the fitness of the induvuals in the model ga"""
+        cost = individual['tot_cost']
+        return cost
+
     def score_ga_agents(self):
         """Scores and orders the fitness function"""
         ga_class = self.AGENT_MAP.get('GA')
@@ -451,6 +536,7 @@ class UUVModel(mesa.Model):
             self.child_chromosones=child_chromosones
 
     def reset_sim(self):
+        """Reset the simulation"""
         self.animator.on_start_click()
         self.clear_agents()
         self.create_initial_agent_pop()

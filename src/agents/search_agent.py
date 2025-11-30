@@ -218,7 +218,7 @@ class SearchAgent(mesa.Agent):
         self.fitness = abs(x1-x2) + abs(y1-y2)
         if self.is_failed is True:
             self.fitness * 30
-        return  self.fitness
+        return self.fitness
 
     def increase_chromosone(self, amt_to_add):
         """Add more genomes to the chromeosone"""
