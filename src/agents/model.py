@@ -439,6 +439,8 @@ class UUVModel(mesa.Model):
             child=self.model_mate(par_a=parent_a, par_b=parent_b)
             new_pop.append(child)
             print(f"{_}: {child}")
+        self.ga_model_pop.clear()
+        self.ga_model_pop=new_pop
  
     def score_model_ga(self):
         """Sorts the model ga agents"""
@@ -477,14 +479,16 @@ class UUVModel(mesa.Model):
             detector_list.append(detector)
 
         # mutate some things
-        if self.MUTATION_RATE > self.random.random():
+        test=self.random.random()
+        if self.MUTATION_RATE > test:
             number = self.random.randint(-2, 2)
             tmp_num_detector = num_detector + number
             # loose a agent
             if tmp_num_detector < num_detector:
                 tmp = num_detector-tmp_num_detector
-                for i in range(tmp):
-                    detector_list.pop()
+                del detector_list[:-tmp]
+                num_detector=len(detector_list)
+
             # gain a agent
             else:
                 tmp=tmp_num_detector-num_detector
@@ -496,6 +500,7 @@ class UUVModel(mesa.Model):
                             sel_spawn = True 
                     new_detc = self.create_agent(type="detector", pos=spawn)
                     detector_list.append(new_detc)
+                num_detector=len(detector_list)
     
         # Get total cost
         tot_cost=self.AGENT_COST*num_detector
