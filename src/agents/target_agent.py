@@ -19,9 +19,15 @@
 import mesa
 import numpy as np
 
+from PIL import Image, ImageTk
+import os
+icon_path = os.path.join(os.getcwd(), "resources", "Installation(Target).png")
+
+
 class TargetAgent(mesa.Agent):
     """Stationary or mobile target agent"""
     DEFAULT_COLOR = "#020EFD"
+    SPRITE_PATH = icon_path
     def __init__(self, model, spawn, map, canvas, grid, *args, **kwargs):
         super().__init__(model, *args, **kwargs)
         
@@ -55,12 +61,36 @@ class TargetAgent(mesa.Agent):
         self.color = kwargs.get('color', self.DEFAULT_COLOR)
         self.canvas = canvas
         self.map = map
-        self.oval = self.canvas.create_oval(
+        #self.oval = self.canvas.create_oval(
+        #    self.position[0]-5, self.position[1]-5,
+        #    self.position[0]+5, self.position[1]+5,
+        #    fill=self.color, tags='target'
+        #)
+        #self.canvas.lift(self.oval)
+        try:
+            img = Image.open(icon_path)  
+            img = img.resize((20, 20), Image.Resampling.LANCZOS)  # change size here
+            self.icon = ImageTk.PhotoImage(img)
+        except Exception as e:
+            print("Error loading target icon:", e)
+            self.icon = None
+
+        if self.icon is not None:
+            self.sprite = self.canvas.create_image(
+            self.position[0], 
+            self.position[1], 
+            image=self.icon,
+            tags="target"
+        )
+        else:
+            # fallback: draw oval if icon fails
+            self.sprite = self.canvas.create_oval(
             self.position[0]-5, self.position[1]-5,
             self.position[0]+5, self.position[1]+5,
-            fill=self.color, tags='target'
+            fill=self.color,
+            tags="target"
         )
-        self.canvas.lift(self.oval)
+        self.canvas.lift(self.sprite)
         
         # Properties
         self.status = True #variable to see if target is destroyed or not
@@ -75,6 +105,11 @@ class TargetAgent(mesa.Agent):
         """Remove canvas items"""
         try:
             if hasattr(self, "oval") and self.oval is not None:
-                self.canvas.delete(self.oval)
+                self.canvas.delete(self.sprite)
+        except Exception:
+            pass
+        try:
+            if hasattr(self, "sprite") and self.sprite is not None:
+                self.canvas.delete(self.sprite)
         except Exception:
             pass

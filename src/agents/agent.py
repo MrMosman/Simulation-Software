@@ -24,6 +24,13 @@ import mesa
 import geopandas as gpd
 from shapely.geometry import Point, shape
 
+from PIL import Image, ImageTk
+
+import os
+#print(os.getcwd())
+#print("CWD printed for debug") #comments for debug
+icon_path = os.path.join(os.getcwd(), "resources", "EnemyUUV.png")
+#print(icon_path)
 
 #user defined
 from map import MapControl
@@ -35,6 +42,7 @@ from temperature import Temperature
 class UUVAgent(mesa.Agent):                         #AS OF 11/14/25 Mike has added speed and has start path be dest (see lines 62-68)
     """UUV agent testing class"""
     DEFAULT_COLOR = "#FD0202"
+    SPRITE_PATH = icon_path
     def __init__(self, model, spawn, map, canvas, grid, *args, **kwargs):
         super().__init__(model, *args, **kwargs)
         #Spawn variable
@@ -62,9 +70,35 @@ class UUVAgent(mesa.Agent):                         #AS OF 11/14/25 Mike has add
         self.color = kwargs.get('color', self.DEFAULT_COLOR)
         self.map = map
         self.canvas = canvas
-        self.oval = self.canvas.create_oval(self.position[0]-5,self.position[1]-5, self.position[0]+5, self.position[1]+5, fill=self.color, tags='agent')
-        self.canvas.lift(self.oval)
+        #self.oval = self.canvas.create_oval(self.position[0]-5,self.position[1]-5, self.position[0]+5, self.position[1]+5, fill=self.color, tags='agent')
+        #self.canvas.lift(self.oval)
+        #Commented out for icons
 
+      
+        try:
+            img = Image.open(icon_path)  
+            img = img.resize((20, 20), Image.Resampling.LANCZOS)  # change size here
+            self.icon = ImageTk.PhotoImage(img)
+        except Exception as e:
+            print("Error loading agent icon:", e)
+            self.icon = None
+
+        if self.icon is not None:
+            self.sprite = self.canvas.create_image(
+            self.position[0], 
+            self.position[1], 
+            image=self.icon,
+            tags="agent"
+        )
+        else:
+            # fallback: draw oval if icon fails
+            self.sprite = self.canvas.create_oval(
+            self.position[0]-5, self.position[1]-5,
+            self.position[0]+5, self.position[1]+5,
+            fill=self.color,
+            tags="agent"
+        )
+        self.canvas.lift(self.sprite)
         # depth varibles
         self.depth_preferd = [10, 20]
         self.depth_min = 5
@@ -222,8 +256,9 @@ class UUVAgent(mesa.Agent):                         #AS OF 11/14/25 Mike has add
         # Set our position to our new coordinates
         self.position = np.array([self.position[0] + new_x, self.position[1] + new_y])
         # Move the canvas oval in proportion
-        self.canvas.move(self.oval, new_x, new_y)     
-       
+        #self.canvas.move(self.oval, new_x, new_y)     
+       #no more oval 
+        self.canvas.move(self.sprite, new_x, new_y)
         
         # Salinity data
         """"
@@ -391,6 +426,12 @@ class UUVAgent(mesa.Agent):                         #AS OF 11/14/25 Mike has add
             if hasattr(self, "oval") and self.oval is not None:
                 try:
                     self.canvas.delete(self.oval)
+                except Exception:
+                    pass
+#For sprites, no longer ovals
+            if hasattr(self, "sprite") and self.sprite is not None:
+                try:
+                    self.canvas.delete(self.sprite)
                 except Exception:
                     pass
         except Exception:

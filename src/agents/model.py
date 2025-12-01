@@ -23,6 +23,11 @@ import mesa
 
 from . import agent, detector_agent, search_agent, CounterUUVAgent, target_agent
 
+from PIL import Image, ImageTk
+import os
+DUUV_path = os.path.join(os.getcwd(), "resources", "DestroyedEnemyUUV.png")
+DCUUV_path = os.path.join(os.getcwd(), "resources", "DestroyedCUUV.png")
+DTarget_path = os.path.join(os.getcwd(), "resources", "DestroyedTarget.png")
 
 class UUVModel(mesa.Model):
     """UUV model testing class"""
@@ -312,6 +317,20 @@ class UUVModel(mesa.Model):
                                 target_agent.canvas.itemconfig(target_agent.oval, fill='orange', outline='black', width=2)
                             except Exception:
                                 pass
+                            #Above for oval, below for sprite
+
+
+                            DTarget = Image.open(DTarget_path).resize((20, 20))
+                            new_DTarget = ImageTk.PhotoImage(DTarget)
+                            target_agent.icon = new_DTarget  # Prevent garbage collection
+                            self.DTargetimage = new_DTarget
+
+                            try:
+                                target_agent.canvas.itemconfig(target_agent.sprite, image=self.DTargetimage) 
+                            except Exception:
+                                pass
+
+
                              
                     except Exception as e:
                         print(f"Collision check error: {e}")
@@ -356,6 +375,28 @@ class UUVModel(mesa.Model):
                             cuuv_agent.canvas.itemconfig(cuuv_agent.oval, fill="#004075")
                         except Exception:
                             pass
+                            #above for oval, below for sprite
+
+                        DUUV = Image.open(DUUV_path).resize((20, 20))
+                        new_DUUV = ImageTk.PhotoImage(DUUV)
+                        self.DUUVimage = new_DUUV  # Prevent garbage collection
+                        target_agent.icon = new_DUUV  
+
+                        DCUUV = Image.open(DCUUV_path).resize((20, 20))
+                        new_DCUUV = ImageTk.PhotoImage(DCUUV)
+                        cuuv_agent.icon = new_DCUUV  # Prevent garbage collection
+                        self.DCUUVimage = new_DCUUV   
+
+                        try:
+                            target_agent.canvas.itemconfig(target_agent.sprite, image=self.DUUVimage)
+                        except Exception:
+                            pass
+                        
+                        try:
+                            cuuv_agent.canvas.itemconfig(cuuv_agent.sprite, image=self.DCUUVimage)
+                        except Exception:
+                            pass
+
                         
                         # Clear CUUV's target
                         cuuv_agent.target = None

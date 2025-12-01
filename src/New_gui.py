@@ -28,6 +28,10 @@ from agents import model
 from config import ConfigManager
 from tkinter import messagebox as mb
 from pathlib import Path
+
+UUV_path = os.path.join(os.getcwd(), "resources", "EnemyUUV.png")
+Target_path = os.path.join(os.getcwd(), "resources", "Installation(Target).png")
+Detector_path = os.path.join(os.getcwd(), "resources", "Detector.png")
 #=========================================================================================================================
 #=========================================================================================================================
 #Main app class, this encompesses the entire GUI and essentially all front end functionality
@@ -73,7 +77,9 @@ class App(tk.Tk):
             agent_type : []
             for agent_type in self.all_agent_types
         }
-       
+        
+
+        self.agent_images = []
         # normalized lookup (case-insensitive)
         self._agent_type_colors_norm = self._build_agent_colors_from_model()
         # Agent model
@@ -175,21 +181,49 @@ class App(tk.Tk):
             print("no file selected")
 
     #Method to draw spawn markers when placing agents
-    def draw_spawn_marker(self, x, y, color):
+    def draw_spawn_marker(self, x, y, color, icon):
+            
             """Draw a small circle marker on the main canvas and return the item id.
 
             x, y: pixel coordinates (same convention used elsewhere in the code).
             color: fill color string (e.g. '#C60707' or 'green').
             """
             radius = 5
+            if icon.lower() == "seeker":
+                icon_path = UUV_path
+            elif icon.lower() == "target":
+                icon_path = Target_path
+            elif icon.lower() == "detector":   
+                icon_path = Detector_path
+
             # ensure canvas exists
             if not hasattr(self, "canvas") or self.canvas is None:
                 raise RuntimeError("Canvas not initialized; cannot draw spawn marker")
-            item_id = self.canvas.create_oval(
+            try:
+                img = Image.open(icon_path)  
+                img = img.resize((20, 20), Image.Resampling.LANCZOS)  # change size here
+                icon = ImageTk.PhotoImage(img)
+                self.agent_images.append(icon)  # <-- This keeps the image alive
+            except Exception as e:
+                print("Error loading agent icon:", e)
+                icon = None
+
+            if icon is not None:
+                item_id = self.canvas.create_image(
+                x, 
+                y, 
+                image=icon,
+                tags=("setup_marker",)
+            )
+            else:
+                # fallback: draw oval if icon fails
+                item_id = self.canvas.create_oval(
                 x - radius, y - radius,
                 x + radius, y + radius,
                 fill=color, tags=("setup_marker",)
             )
+            
+            
             
             return item_id
     
@@ -480,9 +514,11 @@ class App(tk.Tk):
                 if not color:
                     color = "green"
 
+                
+
                 # draw marker and store marker_id
                 try:
-                    marker_id = self.draw_spawn_marker(px, py, color)
+                    marker_id = self.draw_spawn_marker(px, py, color, t)
                     placed["marker_id"] = marker_id
                 except Exception:
                     placed["marker_id"] = None
@@ -559,6 +595,7 @@ class App(tk.Tk):
                 self.add_new_agents_to_model()
                 
             #Clear spawn markers and detector radius rings after model is created
+            self.agent_images.clear()
             self.canvas.delete("setup_marker")
             self.is_running = True
             # Switch Start button to a Pause / Running state
@@ -755,8 +792,8 @@ class App(tk.Tk):
     def viable_spawn_select(self):
         """Selects the viable spawn areas for the detectors"""
         rect_ids = self.canvas.viable_spawn_pos()
-        if len(rect_ids) == 0:
-            raise Exception("Create a grid spawn locations")
+        #if len(rect_ids) == 0:
+        #    raise Exception("Create a grid spawn locations")
         
         # print(f"rects: {rect_ids}")
         viable_spawns = list()
@@ -829,6 +866,23 @@ class App(tk.Tk):
             if color:
                 colors[agent_type.lower()] = color
         return colors
+
+    def _build_agent_sprite_from_model(self) -> dict: #Same format for default color above, for sprites instead of ovals
+        """
+        Extract agent sprite paths from the actual agent classes in the model.
+        Returns a normalized dict {agent_type_lower: sprite_path}
+        """
+        sprites = {}
+        
+        # Access the AGENT_MAP from the model
+        agent_map = model.UUVModel.AGENT_MAP
+        
+        for agent_type, agent_class in agent_map.items():
+            # Get the SPRITE_PATH class attribute if it exists
+            sprite = getattr(agent_class, 'SPRITE_PATH', None)
+            if sprite:
+                sprites[agent_type.lower()] = sprite
+        return sprites
 #End of App (parent) methods
 #=============================================================================================================================================
 #=============================================================================================================================================
@@ -1344,7 +1398,7 @@ class UAVSelectWindow(tk.Toplevel):
 
         # Set up a market id to be stored by each new agent, this will be unique to each placed agent
         # and will serve as a good way to distinguish agents in the future
-        marker_id = self.parent.draw_spawn_marker(snap_x, snap_y, color_for_type)
+        marker_id = self.parent.draw_spawn_marker(snap_x, snap_y, color_for_type, agent_type)
         # Add this marker id to the new agent data dict, will be taken as optional metadata in the .json
         new_agent_data['marker_id'] = marker_id
         
