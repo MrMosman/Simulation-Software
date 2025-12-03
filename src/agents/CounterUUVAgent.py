@@ -32,8 +32,14 @@ from cell import Cell
 from salinity import Salinity
 from temperature import Temperature
 
+
+from PIL import Image, ImageTk
+import os
+icon_path = os.path.join(os.getcwd(), "resources", "CUUV.png")
+
 class CUUVAgent(mesa.Agent):
     DEFAULT_COLOR = "#028CFD"
+    SPRITE_PATH = icon_path
     def __init__(self, model, spawn, grid, map, canvas, *args, **kwargs): 
         super().__init__(model)
 
@@ -49,12 +55,37 @@ class CUUVAgent(mesa.Agent):
         self.color = kwargs.get('color', self.DEFAULT_COLOR)
         self.map = map
         self.canvas = canvas
-        self.oval = self.canvas.create_oval(
-            self.position[0] - 5, self.position[1] - 5,
-            self.position[0] + 5, self.position[1] + 5,
-            fill=self.color, tags='agent'
+        #self.oval = self.canvas.create_oval(
+         #   self.position[0] - 5, self.position[1] - 5,
+          #  self.position[0] + 5, self.position[1] + 5,
+           # fill=self.color, tags='agent'
+        #)
+        #self.canvas.lift(self.oval)
+
+        try:
+            img = Image.open(icon_path)  
+            img = img.resize((20, 20), Image.Resampling.LANCZOS)  # change size here
+            self.icon = ImageTk.PhotoImage(img)
+        except Exception as e:
+            print("Error loading target icon:", e)
+            self.icon = None
+
+        if self.icon is not None:
+            self.sprite = self.canvas.create_image(
+            self.position[0], 
+            self.position[1], 
+            image=self.icon,
+            tags="agent"
         )
-        self.canvas.lift(self.oval)
+        else:
+            # fallback: draw oval if icon fails
+            self.sprite = self.canvas.create_oval(
+            self.position[0]-5, self.position[1]-5,
+            self.position[0]+5, self.position[1]+5,
+            fill=self.color,
+            tags="agent"
+        )
+        self.canvas.lift(self.sprite)
 
         # Movement parameters
         self.speed = 2  # Speed of movement per step
@@ -93,8 +124,27 @@ class CUUVAgent(mesa.Agent):
         self.position[1] += direction_y
 
         # Update the canvas oval position
-        self.canvas.move(self.oval, direction_x, direction_y)
+        self.canvas.move(self.sprite, direction_x, direction_y)
 
     def step(self):
         #print("DEBUG: CUUV Step, Position:", self.position)
         self.move_to_target()
+
+    def cleanup(self):
+        try:
+            if hasattr(self, "sprite") and self.sprite is not None:
+                try:
+                    self.canvas.delete(self.sprite)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        try:
+            if hasattr(self, "radius_oval") and self.radius_oval is not None:
+                try:
+                    self.canvas.delete(self.radius_oval)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        

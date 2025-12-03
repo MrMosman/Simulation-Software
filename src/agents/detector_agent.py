@@ -27,12 +27,20 @@ from .CounterUUVAgent import CUUVAgent
 from .agent import UUVAgent
 import matplotlib.pyplot as plt
 
+from PIL import Image, ImageTk
+
+import os
+icon_path = os.path.join(os.getcwd(), "resources", "Detector.png")
+
+
+
 #user defined
 from cell import Cell
 
 class DetectorAgent(mesa.Agent):
     '''Detector Agentt for a sensor'''
     DEFAULT_COLOR = "#FFFFFF"
+    SPRITE_PATH = icon_path
 
     # keep in mind that the spawns pos(x,y) are flipped
     def __init__(self, model, spawn, map, canvas, grid, *args, **kwargs):
@@ -54,17 +62,43 @@ class DetectorAgent(mesa.Agent):
         self.color = kwargs.get('color', self.DEFAULT_COLOR)
         self.map = map
         self.canvas = canvas
-        self.oval = self.canvas.create_oval(
-            self.position[0] - 5, self.position[1] - 5,
-            self.position[0] + 5, self.position[1] + 5,
-            fill=self.color, tags='agent'
+        #self.oval = self.canvas.create_oval(
+        #    self.position[0] - 5, self.position[1] - 5,
+        #    self.position[0] + 5, self.position[1] + 5,
+        #    fill=self.color, tags='agent'
+        #)
+
+        try:
+            img = Image.open(icon_path)  
+            img = img.resize((20, 20), Image.Resampling.LANCZOS)  # change size here
+            self.icon = ImageTk.PhotoImage(img)
+        except Exception as e:
+            print("Error loading agent icon:", e)
+            self.icon = None
+
+        if self.icon is not None:
+            self.sprite = self.canvas.create_image(
+            self.position[0], 
+            self.position[1], 
+            image=self.icon,
+            tags="agent"
         )
+        else:
+            # fallback: draw oval if icon fails
+            self.sprite = self.canvas.create_oval(
+            self.position[0]-5, self.position[1]-5,
+            self.position[0]+5, self.position[1]+5,
+            fill=self.color,
+            tags="agent"
+        )
+        self.canvas.lift(self.sprite)
+
         self.radius_oval = self.canvas.create_oval(
             self.position[0] - self.radius, self.position[1] - self.radius,
             self.position[0] + self.radius, self.position[1] + self.radius,
             outline=self.radius_color, fill='', dash=(3, 3), tags='agent'
         )
-        self.canvas.lift(self.oval)
+        #self.canvas.lift(self.oval)
         self.canvas.lift(self.radius_oval)
 
         self.Used = False
@@ -151,7 +185,14 @@ class DetectorAgent(mesa.Agent):
                     pass
         except Exception:
             pass
-
+        try:
+            if hasattr(self, "sprite") and self.sprite is not None:
+                try:
+                    self.canvas.delete(self.sprite)
+                except Exception:
+                    pass
+        except Exception:
+            pass
         try:
             if hasattr(self, "radius_oval") and self.radius_oval is not None:
                 try:
