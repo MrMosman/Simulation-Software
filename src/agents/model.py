@@ -424,7 +424,7 @@ class UUVModel(mesa.Model):
     
     def create_next_model_generation(self):
         """Create the next GA model population"""
-        pop_sorted=self.score_model_ga()
+        pop_sorted=self.fitness_model_ga()
         new_pop=list()
         if not pop_sorted or len(pop_sorted)<2:
             print("Error: not enough agents")
@@ -442,7 +442,7 @@ class UUVModel(mesa.Model):
         self.ga_model_pop.clear()
         self.ga_model_pop=new_pop
  
-    def score_model_ga(self):
+    def fitness_model_ga(self):
         """Sorts the model ga agents"""
         if self.ga_model_pop is None:
             print("Error: Model GA population not initialized")

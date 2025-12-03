@@ -31,7 +31,7 @@ import matplotlib.pyplot as plt
 from cell import Cell
 
 class DetectorAgent(mesa.Agent):
-    '''Detector Agnet for a sensor'''
+    '''Detector Agentt for a sensor'''
     DEFAULT_COLOR = "#FFFFFF"
 
     # keep in mind that the spawns pos(x,y) are flipped

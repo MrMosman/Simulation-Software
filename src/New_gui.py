@@ -531,7 +531,8 @@ class App(tk.Tk):
 
             # If model already exists, just resume it (do not clear/recreate)
             if self.mesa_model is None:
-                # Validate map/grid preconditions
+                # Validate map/
+                # grid preconditions
                 if self.map_grid is None:
                     tk.messagebox.showerror("Error", "Please load a map before starting the simulation.")
                     self.start_button.config(state="normal", bg="#333333", text="▶ Start", command=self.on_start_click)
