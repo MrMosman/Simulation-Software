@@ -419,12 +419,12 @@ class UUVModel(mesa.Model):
             lil_dude = self.create_agent(type="detector", pos=spawn)
             detector_list.append(lil_dude)
 
-        individual = {"#_detc": num_detector, "agent_det": detector_list, "tot_cost": tot_cost}
+        individual = {"#_detc": num_detector, "agent_list": detector_list, "tot_cost": tot_cost}
         return individual
     
     def create_next_model_generation(self):
         """Create the next GA model population"""
-        pop_sorted=self.fitness_model_ga()
+        pop_sorted=self.score_model_ga()
         new_pop=list()
         if not pop_sorted or len(pop_sorted)<2:
             print("Error: not enough agents")
@@ -442,7 +442,7 @@ class UUVModel(mesa.Model):
         self.ga_model_pop.clear()
         self.ga_model_pop=new_pop
  
-    def fitness_model_ga(self):
+    def score_model_ga(self):
         """Sorts the model ga agents"""
         if self.ga_model_pop is None:
             print("Error: Model GA population not initialized")
@@ -458,9 +458,9 @@ class UUVModel(mesa.Model):
         # choose the amount of detectors
         num_detector=self.random.choice([par_a["#_detc"], par_b["#_detc"]])
         total_spawn_location=list()
-        for agent in par_a["agent_det"]:
+        for agent in par_a["agent_list"]:
             total_spawn_location.append(agent.spawn)
-        for agent in par_b["agent_det"]:
+        for agent in par_b["agent_list"]:
             total_spawn_location.append(agent.spawn)
 
         # select which detectors to bring to child
@@ -469,7 +469,7 @@ class UUVModel(mesa.Model):
             sel=False
             selected_det=None
             while sel is False:
-                chosen_list=self.random.choice([par_a["agent_det"], par_b["agent_det"]])
+                chosen_list=self.random.choice([par_a["agent_list"], par_b["agent_list"]])
                 selected_det=self.random.choice(chosen_list)
                 if selected_det not in already_chosen:
                     sel = True
@@ -504,13 +504,25 @@ class UUVModel(mesa.Model):
     
         # Get total cost
         tot_cost=self.AGENT_COST*num_detector
-        child={"#_detc": num_detector, "agent_det": detector_list, "tot_cost": tot_cost}
+        child={"#_detc": num_detector, "agent_list": detector_list, "tot_cost": tot_cost}
         return child
 
     def calulate_fitness(self, individual):
         """Calulates the fitness of the induvuals in the model ga"""
+        alpha = 1
+        beta = 1
         cost = individual['tot_cost']
-        return cost
+        agent_list = individual['agent_list']
+        total_used = 0
+        for agent in agent_list:
+            if agent.Used is True:
+                total_used+=1
+
+        seeker_class = self.AGENT_MAP.get('seeker')
+        seeker_set = self.agents_by_type.get(seeker_class)
+        amt_seeker = len(list(seeker_set))
+        score = 
+        return score
 
     def score_ga_agents(self):
         """Scores and orders the fitness function"""
