@@ -90,9 +90,10 @@ class UUVModel(mesa.Model):
         self.save_list = list()
 
         # model GA assignments
-        self.ga_model_active = True # set to True to enable model GA, False for GA agents
+       # Auto-detect: only enable GA model if viable_spawns are provided
+        self.ga_model_active = (self.viable_spawns is not None and len(self.viable_spawns) > 0)
         self.ga_model_pop = None
-        if self.viable_spawns is not None:
+        if self.ga_model_active:
             self.ga_model_pop = self.create_inital_model_pop()
         self.det_cost = 50
 
@@ -562,7 +563,7 @@ class UUVModel(mesa.Model):
         seeker_class = self.AGENT_MAP.get('seeker')
         seeker_set = self.agents_by_type.get(seeker_class)
         amt_seeker = len(list(seeker_set))
-        score = 
+        score = cost
         return score
 
     def score_ga_agents(self):

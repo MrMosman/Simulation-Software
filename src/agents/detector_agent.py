@@ -108,6 +108,9 @@ class DetectorAgent(mesa.Agent):
         self.scatter = None
 
     def step(self):
+        if self.Used:
+            return
+
         Detection = self.detect()
         
         current_step = self.model.schedule.steps if hasattr(self.model, 'schedule') else 0
