@@ -121,4 +121,4 @@ py -m pip install -r requirments.txt
 insert example
 
 # Future Work & Handoff Notes
- * **now****[#14]**
+ * **now** [#14](../issues/5)
