@@ -128,30 +128,34 @@ py -m pip install -r requirments.txt
 insert example
 
 # ❗ Future Work & Handoff Notes
+Everything in here is stored as an issue for portiblity.
 
-## Issues
-A list of current issues on the repo. you can checkout the issues tab but just in case.
-
-### 🐞 BUGS
+## 🐞 BUGS
+These are some pretty bad bugs and need to be fixed asap. Alot of the problems are created from using AI to write code.
 * [#25](/../../issues/25)
 * [#21](/../../issues/21)
 * [#19](/../../issues/19)
 * [#18](/../../issues/18)
 
-### 📃 Documentation
+## 📃 Documentation
+At the time of writing this, no more updates are being added to the program as the semester has ended and noone is getting paid. Instead, everyone is trying to document what they did but there is still plenty that needs documenting
 * [#35](/../../issues/35)
 * [#29](/../../issues/29)
 * [#28](/../../issues/28)
 * [#26](/../../issues/26)
 
-### Updates
+## Updates
+These are issues that arent really problems but do need attention
+* [#30](/../../issues/30)
+* [#25](/../../issues/25)
+* [#27](/../../issues/27)
+* [#22](/../../issues/22)
+* [#20](/../../issues/20)
+
+## Genetic Algorthuim
+These are request that Prof. Lance has made in regard to the genetic algorithum latest release. Currently, it works as intended and needs only slight modication to get these request to work. Mostly just changing single varibles.
 * [#33](/../../issues/33)
 * [#32](/../../issues/32)
 * [#31](/../../issues/31)
-* [#30](/../../issues/30)
-* [#27](/../../issues/27)
-* [#25](/../../issues/25)
 * [#24](/../../issues/24)
 * [#23](/../../issues/23)
-* [#22](/../../issues/22)
-* [#20](/../../issues/20)
