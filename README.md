@@ -1,7 +1,7 @@
 # UUV Genetic Algorithm Optimization
 This project focus on the use of agent-based modeling to solve the problem of optimizing the placement of detection and counter UUV units in regard to a water-based scenario. This is a Python based project as Mesa was requested to be the main agent-based backend. Mesa is used as an agent-based library for helper functions like creation, proximity, and data collection. Tkinter was used for all user related graphics including maps and menus. Lastly, maps were made from the GIS data provided by the Office of Coast Survey.
 
-This document covers the process of setting up and contributing while an in-depth code content is covered here.
+This document covers the process of setting up and contributing while an in-depth code content is covered in the [code base](docs/codebase.md).
 
 # 😎 Teams
 <!-- Additional teams include a new header for your project year -->
