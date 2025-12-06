@@ -1,7 +1,7 @@
-# Operation Manual
+# Operation Manual 
 
 ## GIS Data
-This sections covers where and how to get the mapping data for your simulations. The data used comes free from the U.S. Office of Coast Survey.
+This section covers where and how to get the mapping data for your simulations. The data used comes free from the U.S. Office of Coast Survey.
 1. Go to the [U.S. Office of Coast Survey](https://nauticalcharts.noaa.gov/data/gis-data-and-services.html)
 2. Click the ENC Direct to GIS drop down or use this [ENC Direct to GIS](https://encdirect.noaa.gov/)
 
@@ -15,11 +15,11 @@ This sections covers where and how to get the mapping data for your simulations.
 
 ![layer menu](resources/layer_menu.png)
 
-5. Choose any of the catagories, i need Harbour
+5. Choose any of the categories, i need Harbor
 
 6. Select DepthsA\Harbour_Depth_area.
 >[!NOTE]
->The program can only handle .shp data. However, that data is verstiale and comes in lots of options 
+>The program can only handle .shp data. However, that data is versatile and comes in lots of options 
 
 >[!TIP]
 > Try to use only data that ends in area ie. Harbour_Dredge_Area
@@ -37,9 +37,9 @@ This sections covers where and how to get the mapping data for your simulations.
 ### GIS Example
 
 ## Simulation Software
-This section covers how to use the simulation software.
+This section covers how to use simulation software.
 >[!NOTE]
->This covers how to do run in VS Code. Other code editors may be different
+>This covers how to run in VS Code. Other code editors may be different
 1. go to the main.py and start
 2. This will open the simulation window
 

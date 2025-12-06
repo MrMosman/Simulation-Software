@@ -6,7 +6,7 @@ This document covers the process of setting up and contributing while an in-dept
 # 😎 Teams
 <!-- Additional teams include a new header for your project year -->
 <!-- ex: ### Fall 2026 -->
-### Fall 2025
+### Fall 2025 (Inital Creation)
 * Gunner Cook-Dumas (SCRUM Manager, Backend, Agent, Model, and GA Structure)
 * Justin Mosman (developer)
 * Michael Cardinal (developer)
