@@ -95,6 +95,7 @@ py -m pip install -r requirments.txt
 ```
 # How to use
 ## GIS Data
+### GIS Example
 
 ## Simulation Software
 >[!NOTE]
@@ -106,6 +107,7 @@ py -m pip install -r requirments.txt
 4. Choose your GIS data which should be a shape file .shp. 
 5. The map you selected will be renderd in the canvas
 > [!NOTE] The grid dots can be toggled in the code
+
 ![image of a simulation window with a renderd map](docs/map_loaded.png)
 6. Navigate to the Agent Selection and click "+ Add Agent". This will open a pop up.
 ![image of a simulation window](docs/agent.png)
@@ -115,5 +117,7 @@ py -m pip install -r requirments.txt
 10. Close the pop-up window.
 11. Select "Choose Grid" next to Config Options to select the viable spawn locations for the detecting UUV agents used by the genetic algorithum.
 12. Navigate to the Simulation Options and click "Start" to begin.
+### Simulation Example
+insert example
 
 # Future Work & Handoff Notes
