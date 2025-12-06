@@ -102,7 +102,9 @@ py -m pip install -r requirments.txt
 >This covers how to do run in VS Code. Other code editors may be differnet
 1. go to the main.py and start
 2. This will open the simulation window
+
 ![image of a simulation window](docs/startup.png)
+
 3. Navigate to the Map Selection and click "Select". This will open your file exsplorer.
 4. Choose your GIS data which should be a shape file .shp. 
 5. The map you selected will be renderd in the canvas
@@ -126,4 +128,6 @@ py -m pip install -r requirments.txt
 insert example
 
 # ❗ Future Work & Handoff Notes
- * **issue test** [#14](/../../issues/5)
+
+## Issues
+ * **issue test** [#18](/../../issues/18)
