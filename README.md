@@ -36,7 +36,7 @@ What is actually contain in the git repo ie. Simulation-Software
 │   ├── shape_files/
 │   ├── test/
 │   └── TIFF/
-├── docs/                 # documentation and readme
+├── docs/resources/                 # documentation and readme
 ├── resources/            # resources like graphics and icons
 ├── shape_filedata        # shape file data for maps
 ├── src/                  # src code
@@ -94,72 +94,9 @@ py -m pip install -r requirments.txt
 │   └── virtual environment/ 
 ```
 # 🔍 How to use
-## GIS Data
-This sections covers where and how to get the mapping data for your simulations. The data used comes free from the U.S. Office of Coast Survey.
-1. Go to the [U.S. Office of Coast Survey](https://nauticalcharts.noaa.gov/data/gis-data-and-services.html)
-2. Click the ENC Direct to GIS drop down or use this [ENC Direct to GIS](https://encdirect.noaa.gov/)
+This program uses the US Office of Coast Survey as an external resource
 
-![Image of the office of coast survey](docs/us_office.png)
-
-3. Navigate towards a region, i choose Narragansett Bay
-
-![narragansett bay](docs/bay.png)
-
-4. open data extract drop down menu
-
-![layer menu](docs/layer_menu.png)
-
-5. Choose any of the catagories, i need Harbour
-
-6. Select DepthsA\Harbour_Depth_area.
->[!NOTE]
->The program can only handle .shp data. However, that data is verstiale and comes in lots of options 
-
->[!TIP]
-> Try to use only data that ends in area ie. Harbour_Dredge_Area
-
-7. Select the region to collect by using Area of Interest.
-
-![area of interest](docs/area_of_interest.png)
-
-8. Extract the data as a .shp file
-
-![extract data](docs/extract_data.png)
-
-9. A download will appear and unzip the folder
-
-### GIS Example
-
-## Simulation Software
-This section covers how to use the simulation software.
->[!NOTE]
->This covers how to do run in VS Code. Other code editors may be different
-1. go to the main.py and start
-2. This will open the simulation window
-
-![image of a simulation window](docs/startup.png)
-
-3. Navigate to the Map Selection and click "Select". This will open your file explorer.
-4. Choose your GIS data which should be a shape file .shp. 
-5. The map you selected will be rendered in the canvas
-> [!NOTE] 
->The grid dots can be toggled in the code
-
-![image of a simulation window with a rendered map](docs/map_loaded.png)
-
-6. Navigate to the Agent Selection and click "+ Add Agent". This will open a pop up.
-
-![image of a simulation window](docs/agent.png)
-
-7. Navigate to the Select UUV window.
-8. With "Attacker" selected, choose seeker from dropdown, and click "Spawn". This will allow you to click on the map to set the spawn location of the attacking uuv agent.
-9. Select "Defender" and choose "target" from the dropdown and spawn similarly.
-10. Close the pop-up window.
-11. Select "Choose Grid" next to Config Options to select the viable spawn locations for the detecting UUV agents used by the genetic algorithm.
-12. Navigate to the Simulation Options and click "Start" to begin.
-
-### Simulation Example
-insert example
+[Operation Manual](docs/manual.md)
 
 # ❗ Future Work & Handoff Notes
 Everything in here is stored as an issue for portability.
