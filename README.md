@@ -12,7 +12,7 @@ This document covers the process of setting up and contributing while an indepth
 * Michael Cardinal (developer)
 * Lauren Milne (SCRUM Product Owner)
 
-# Technical
+# 🛠 Technical
 Guide to setting up the project
 ## Prerequisites
 * OS: Any
