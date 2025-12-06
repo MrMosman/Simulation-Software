@@ -3,7 +3,7 @@ This project focus on the use of agent-based modeling to solve the problem of op
 
 This document covers the process of setting up and contributing while an indepth code content is coverd here.
 
-# Teams
+# 😎 Teams
 <!-- Addtionally teams include a new header for your project year -->
 <!-- ex: ### Fall 2026 -->
 ### Fall 2025
@@ -93,7 +93,7 @@ py -m pip install -r requirments.txt
 │   ├── Simulation-Software/ 
 │   └── virtual environment/ 
 ```
-# How to use
+# 🔍 How to use
 ## GIS Data
 ### GIS Example
 
@@ -120,5 +120,5 @@ py -m pip install -r requirments.txt
 ### Simulation Example
 insert example
 
-# Future Work & Handoff Notes
- * **now** [#14](/../../issues/5)
+# ❗ Future Work & Handoff Notes
+ * **issue test** [#14](/../../issues/5)
