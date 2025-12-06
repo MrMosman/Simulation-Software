@@ -106,7 +106,8 @@ py -m pip install -r requirments.txt
 3. Navigate to the Map Selection and click "Select". This will open your file exsplorer.
 4. Choose your GIS data which should be a shape file .shp. 
 5. The map you selected will be renderd in the canvas
-> [!NOTE] The grid dots can be toggled in the code
+> [!NOTE] 
+>The grid dots can be toggled in the code
 
 ![image of a simulation window with a renderd map](docs/map_loaded.png)
 
