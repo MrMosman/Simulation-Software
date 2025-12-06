@@ -109,14 +109,18 @@ py -m pip install -r requirments.txt
 > [!NOTE] The grid dots can be toggled in the code
 
 ![image of a simulation window with a renderd map](docs/map_loaded.png)
+
 6. Navigate to the Agent Selection and click "+ Add Agent". This will open a pop up.
+
 ![image of a simulation window](docs/agent.png)
+
 7. Navigate to the Select UUV window.
 8. With "Attacker" selected, choose seeker from dropdown, and click "Spawn". This will allow you to click on the map to set the spawn location of the attacking uuv agent.
 9. Select "Defender" and choose "target" from the dropdown and spawn similary.
 10. Close the pop-up window.
 11. Select "Choose Grid" next to Config Options to select the viable spawn locations for the detecting UUV agents used by the genetic algorithum.
 12. Navigate to the Simulation Options and click "Start" to begin.
+
 ### Simulation Example
 insert example
 
