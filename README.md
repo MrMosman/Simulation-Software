@@ -7,7 +7,7 @@ This document covers the process of setting up and contributing while an indepth
 <!-- Addtionally teams include a new header for your project year -->
 <!-- ex: ## Fall 2026 -->
 ## Fall 2025
-* [Gunner Cook-Dumas](@https://github.com/gunnerdumas) (SCRUM Manager, Backend, Agent, Model, and GA Stucture)
+* [Gunner Cook-Dumas](@github.com/gunnerdumas) (SCRUM Manager, Backend, Agent, Model, and GA Stucture)
 * [Justin Mosman](@MrMosman) (developer)
 * [Michael Cardinal](@) (developer)
 * Lauren Milne (SCRUM Product Owner)
