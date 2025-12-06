@@ -7,9 +7,9 @@ This document covers the process of setting up and contributing while an indepth
 <!-- Addtionally teams include a new header for your project year -->
 <!-- ex: ## Fall 2026 -->
 ## Fall 2025
-* @gunnerdumas Gunner Cook-Dumas (SCRUM Manager, Backend, Agent, Model, and GA Stucture)
-* Justin Mosman (developer)
-* Michael Cardinal (developer)
+* [Gunner Cook-Dumas](@gunnerdumas) (SCRUM Manager, Backend, Agent, Model, and GA Stucture)
+* [Justin Mosman](@MrMosman) (developer)
+* [Michael Cardinal](@) (developer)
 * Lauren Milne (SCRUM Product Owner)
 
 # Technical
@@ -17,18 +17,80 @@ Guide to setting up the project
 ## Prerequisites
 * OS: Any
 * Python 3.13.7
+* VSCode (preferred)
 ## Structure
-. <br/>
-├── src/                  # All core scripts and modeling code<br/>
-├── data/                 # Raw and processed datasets (Use Git LFS if needed!)<br/>
-│   ├── raw/<br/>
-│   └── processed/<br/>
-├── notebooks/            # Jupyter notebooks for testing and plotting<br/>
-├── documentation/        # Manuscript drafts, figures, presentations<br/>
-├── config.yaml           # Global configuration file for parameters<br/>
-└── README.md<br/>
+Your overall project structure should look as follows. When cloning the repo, make sure to make a overarching folder to contain both the repo and a virtual enviroment.
+```
+├── Project_name/    #name of project can what you want, not included in repo
+│   ├── Simulation-Software/ # the git repo, what you clone
+│   └── virtual environment/ # hold your local python, not included in repo
+```
+
+### repo structure
+What is acutlly contain in the git repo ie. Simulation-Software
+```
+.
+├── configs/              # config files
+├── data/                 # Raw and processed datasets (Use Git LFS if needed!)
+│   ├── raw/
+│   ├── shape_files/
+│   ├── test/
+│   └── TIFF/
+├── docs/                 # documenation and readme
+├── resources/            # resources like graphics and icons
+├── shape_filedata        # shape file data for maps
+├── src/                  # src code
+│   ├── agents/           # folder for all agent related files, recommend by Mesa
+│   │   ├── agent.py
+│   │   ├── CounterUUVAgnet.py
+│   │   ├── detector_agent.py
+│   │   ├── model.py 
+│   │   ├── search_agent.py
+│   │   └──  target_agent.py
+│   ├── cell.py
+│   ├── config.py
+│   ├── grid.py
+│   ├── gui.py
+│   ├── main.py
+│   ├── map.py
+│   ├── New_gui.py
+│   ├── salinity.py
+│   └── temperature.py
+├── log.txt 
+└── README.md
+```
 
 ## Installation
+This installation will cover Windows, but similar steps for other OS, just slightly differnet commands.
+
+1. Setup git account
+2. Setup project folder
+3. Clone the repo into project
+```
+git clone https://github.com/MrMosman/Simulation-Software.git
+```
+4. Create virtual enviroment in your project
+```
+py -m venv .venv
+```
+5. Activate venv
+```
+.venv\Scripts\activate
+```
+6. confirm activation. should should the path of the python in the venv
+```
+where python
+```
+7. Install requirments from repo
+```
+py -m pip install -r requirments.txt
+```
+8. Your file project should look as follows
+```
+├── Project_name/    
+│   ├── Simulation-Software/ 
+│   └── virtual environment/ 
+```
 
 # Workflow
 
