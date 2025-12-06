@@ -112,7 +112,6 @@ These are some pretty bad bugs and need to be fixed asap. Alot of the problems a
 At the time of writing this, no more updates are being added to the program as the semester has ended and no one is getting paid. Instead, everyone is trying to document what they did but there is still plenty that needs documenting
 * [#35](/../../issues/35)
 * [#29](/../../issues/29)
-* [#28](/../../issues/28)
 * [#26](/../../issues/26)
 
 ## Updates
