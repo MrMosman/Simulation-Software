@@ -130,4 +130,28 @@ insert example
 # ❗ Future Work & Handoff Notes
 
 ## Issues
- * **issue test** [#18](/../../issues/18)
+A list of current issues on the repo. you can checkout the issues tab but just in case.
+
+### 🐞 BUGS
+* [#25](/../../issues/25)
+* [#21](/../../issues/21)
+* [#19](/../../issues/19)
+* [#18](/../../issues/18)
+
+### 📃 Documentation
+* [#35](/../../issues/35)
+* [#29](/../../issues/29)
+* [#28](/../../issues/28)
+* [#26](/../../issues/26)
+
+### Updates
+* [#33](/../../issues/33)
+* [#32](/../../issues/32)
+* [#31](/../../issues/31)
+* [#30](/../../issues/30)
+* [#27](/../../issues/27)
+* [#25](/../../issues/25)
+* [#24](/../../issues/24)
+* [#23](/../../issues/23)
+* [#22](/../../issues/22)
+* [#20](/../../issues/20)
